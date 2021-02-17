@@ -34,6 +34,8 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 
 add_executable(doppelganger 
 	main.cpp 
+	enroller.h
+	enroller.cpp
 )
 
 #[[
