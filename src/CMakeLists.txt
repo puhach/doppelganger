@@ -34,8 +34,8 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 
 add_executable(doppelganger 
 	main.cpp 
-	enroller.h
-	enroller.cpp
+	facedb.h
+	facedb_impl.h
 )
 
 #[[
@@ -51,20 +51,23 @@ target_link_libraries(doppelganger ${LINK_LIBS})
 target_link_libraries(doppelganger ${OpenCV_LIBS} dlib::dlib)
 		
 	
-# Copy the shape predictor to the output directory
+# TODO: Copy Dlib models to the output directory
+#[[
 add_custom_command(TARGET doppelganger
                      POST_BUILD
                      COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                     "${PROJECT_SOURCE_DIR}/../models/shape_predictor_68_face_landmarks.dat"
+                     "${PROJECT_SOURCE_DIR}/../models/*"
                      "$<TARGET_FILE_DIR:doppelganger>")
+]]
 
-# Copy celeba mini dataset to the output directory
+# TODO: Copy celeba mini dataset to the output directory
+#[[
 add_custom_command(TARGET doppelganger
                    POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy_directory
                    "${PROJECT_SOURCE_DIR}/../dataset"
                    "$<TARGET_FILE_DIR:doppelganger>/dataset")
-
+]]
 	
 # Copy test image files to the output directory
 add_custom_command(TARGET doppelganger

@@ -1,5 +1,5 @@
-#ifndef ENROLLER_H
-#define ENROLLER_H
+#ifndef FACEDB_H
+#define FACEDB_H
 
 
 #include "resnet.h"		// TODO: remove it when a separate face recognizer is used
@@ -22,13 +22,13 @@
 //#define USE_PRODUCER_CONSUMER	
 
 template <class DescriptorComputer>
-class Enroller
+class FaceDb
 {
 	//typedef dlib::matrix<float, 0, 1> Descriptor;	// TODO: this is ResNet::output_label_type
 
 public:
-	//Enroller(const std::string& database, const std::string& cache = std::string());
-	Enroller(const std::string& database);
+	//FaceDb(const std::string& database, const std::string& cache = std::string());
+	FaceDb(const std::string& database);
 	
 
 	// TODO: define copy/move semantics
@@ -74,7 +74,7 @@ private:
 	// It allows us to create one instance of DescriptorComputer and then duplicate it when necessary
 	// (thus, we don't need to deserialize models again). An important consequence of it is that we can't easily 
 	// update the DescriptorComputer without affecting other instances.
-	static DescriptorComputer& getDescriptorComputer();	
+	static const DescriptorComputer& getDescriptorComputer();	
 
 	void debugMsg(const std::string& msg);
 
@@ -86,8 +86,8 @@ private:
 	//dlib::shape_predictor landmarkDetector;
 	//ResNet netOrigin;
 	//static const DescriptorComputer descriptorComputerOrigin;
-};	// Enroller
+};	// FaceDb
 
-#include "enroller.cpp"
+#include "facedb_impl.h"
 
-#endif	// ENROLLER_H
+#endif	// FACEDB_H

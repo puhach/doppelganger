@@ -1,6 +1,3 @@
-#include "enroller.h"
-#include "resnet.h"		// TODO: remove it when a separate face recognizer is used
-
 #include <iostream>	// TEST!
 #include <dlib/image_io.h>
 #include <dlib/image_transforms.h>
@@ -10,11 +7,12 @@
 #include <dlib/gui_widgets.h>	// TEST!
 
 #include <execution>
+#include "facedb.h"
 
 
-//Enroller::Enroller(const std::string& database, const std::string& landmarkDetectorPath)
+//FaceDb::FaceDb(const std::string& database, const std::string& landmarkDetectorPath)
 template <class DescriptorComputer>
-Enroller<DescriptorComputer>::Enroller(const std::string& database)
+FaceDb<DescriptorComputer>::FaceDb(const std::string& database)
 {
 	/*dlib::deserialize(landmarkDetectorPath) >> this->landmarkDetector;
 	dlib::deserialize("dlib_face_recognition_resnet_model_v1.dat") >> this->netOrigin;*/
@@ -39,7 +37,7 @@ void Enroller::enroll(const std::string& datasetPath, const std::string& outputP
 	//process(outputPath);
 	auto producer = std::async(std::launch::async, &Enroller::listFiles, this, datasetPath);
 
-	//auto consumer = std::async(std::launch::async, &Enroller::process, this, outputPath);
+	//auto consumer = std::async(std::launch::async, &FaceDb::process, this, outputPath);
 	std::vector<std::future<void>> consumers(3);	// number of processing threads
 	//for (int i = 0; i < consumers.size(); ++i)
 	for (auto &consumer : consumers)
@@ -247,7 +245,7 @@ void Enroller::processFiles(const std::string& outputPath)
 #else	// !USE_PRODUCER_CONSUMER
 
 template <class DescriptorComputer>
-void Enroller<DescriptorComputer>::create(const std::string& datasetPath)
+void FaceDb<DescriptorComputer>::create(const std::string& datasetPath)
 {
 	//namespace fs = std::filesystem;
 	//this->faceMap.clear();
@@ -289,8 +287,6 @@ void Enroller<DescriptorComputer>::create(const std::string& datasetPath)
 					// TODO: we could with some effort update thread_local variables by copying the instance of
 					// the original DescriptorComputer, but how fast is that?
 					return descriptorComputer.computeDescriptor(filePath.string());
-					//descriptorComputer.computeDescriptor(fileEntry.path().string());
-					//return this->computeDescriptor(fileEntry);
 				});
 
 
@@ -348,14 +344,14 @@ void Enroller<DescriptorComputer>::create(const std::string& datasetPath)
 }	// create
 
 template <class DescriptorComputer>
-void Enroller<DescriptorComputer>::load(const std::string& databasePath)
+void FaceDb<DescriptorComputer>::load(const std::string& databasePath)
 {
 	// TODO: implement it
 }	// load
 
 /*
 // TODO: move this to a separate class for computing face descriptors
-std::optional<Enroller::Descriptor> Enroller::computeDescriptor(const std::filesystem::path& filePath)
+std::optional<FaceDb::Descriptor> FaceDb::computeDescriptor(const std::filesystem::path& filePath)
 {
 	
 	//dlib::shape_predictor landmarkDetector;
@@ -415,8 +411,16 @@ std::optional<Enroller::Descriptor> Enroller::computeDescriptor(const std::files
 */
 #endif	// !USE_PRODUCER_CONSUMER
 
+template<class DescriptorComputer>
+const DescriptorComputer& FaceDb<DescriptorComputer>::getDescriptorComputer()
+{
+	// TODO: try shape_predictor_5_face_landmarks.dat
+	static DescriptorComputer descriptorComputer("./shape_predictor_68_face_landmarks.dat", "./dlib_face_recognition_resnet_model_v1.dat");	
+	return descriptorComputer;
+}
+
 template <class DescriptorComputer>
-void Enroller<DescriptorComputer>::debugMsg(const std::string& msg)
+void FaceDb<DescriptorComputer>::debugMsg(const std::string& msg)
 {
 	std::scoped_lock<std::mutex> lock(this->mtxDbg);
 	std::cout << std::this_thread::get_id() << " : " << msg << std::endl;
