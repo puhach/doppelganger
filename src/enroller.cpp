@@ -1,4 +1,5 @@
 #include "enroller.h"
+#include "resnet.h"		// TODO: remove it when a separate face recognizer is used
 
 #include <iostream>	// TEST!
 #include <dlib/image_io.h>
@@ -14,6 +15,7 @@
 Enroller::Enroller(const std::string& database, const std::string& landmarkDetectorPath)
 {
 	dlib::deserialize(landmarkDetectorPath) >> this->landmarkDetector;
+	dlib::deserialize("dlib_face_recognition_resnet_model_v1.dat") >> this->netOrigin;
 
 	if (std::filesystem::is_directory(database))
 		create(database);
@@ -246,7 +248,7 @@ void Enroller::processFiles(const std::string& outputPath)
 void Enroller::create(const std::string& datasetPath)
 {
 	//namespace fs = std::filesystem;
-	this->faceMap.clear();
+	//this->faceMap.clear();
 	this->labels.clear();
 
 	int index = 0, label = 0;
@@ -282,15 +284,7 @@ void Enroller::create(const std::string& datasetPath)
 				});
 
 
-			// Add the descriptors and labels to the database			
-
-			for (auto& descriptor : descriptors)
-			{
-				if (descriptor)
-					this->faceMap[*descriptor] = label;
-			}
-
-			this->labels.push_back(dirEntry.path().filename().string());
+			// Add the descriptors and labels to the database	
 
 			++label;
 		}	// is directory
@@ -303,9 +297,67 @@ void Enroller::load(const std::string& databasePath)
 
 }	// load
 
+// TODO: move this to a separate class for computing face descriptors
 std::optional<Enroller::Descriptor> Enroller::computeDescriptor(const std::filesystem::path& filePath)
 {
 	
+	//dlib::shape_predictor landmarkDetector;
+	//dlib::deserialize("./shape_predictor_68_face_landmarks.dat") >> landmarkDetector;
+
+	// Load the image
+	dlib::array2d<dlib::rgb_pixel> im;
+	dlib::load_image(im, filePath.string());
+
+	// Detect the face
+	// TODO: downsample the image
+	thread_local dlib::pyramid_down<2> pyrDown;		// TODO: common
+	thread_local dlib::array2d<dlib::rgb_pixel> imDown;	// TODO: common?
+	//if (double scale = std::max(im.nr(), im.nc()) / 300.0; scale > 1)
+	bool downsampled = false;
+	if (std::max(im.nr(), im.nc()) > 300)
+	{
+		pyrDown(im, imDown);
+		im.swap(imDown);
+		downsampled = true;
+	}
+
+	thread_local dlib::frontal_face_detector faceDetector = faceDetectorOrigin;		// copying is faster calling get_frontal_face_detector() every time
+	auto faces = faceDetector(im);
+	if (faces.empty())		// no faces detected in this image
+		return std::nullopt;
+
+	dlib::rectangle faceRect = faces[0];
+	//if (imDown.begin() != imDown.end())		// scale back
+	if (downsampled)
+	{
+		im.swap(imDown);
+		faceRect = pyrDown.rect_up(faceRect);
+	}
+
+	// From Dlib docs: No synchronization is required when using this object.  In particular, a
+	// single instance of this object can be used from multiple threads at the same time.
+	//auto landmarks = landmarkDetector(im, faces[0]);	// TODO: remember to scale back the face rectangle
+	auto landmarks = landmarkDetector(im, faceRect);
+	if (landmarks.num_parts() < 1)
+		return std::nullopt;		// TODO: perhaps, define a specific exception for detection failure?
+
+	// Align the face
+	dlib::matrix<dlib::rgb_pixel> face;		// TODO: matrix vs array2d
+	//dlib::extract_image_chip(im, dlib::get_face_chip_details(landmarks, 256, 0.25), face);	// TODO: add class parameters
+	dlib::extract_image_chip(im, dlib::get_face_chip_details(landmarks, inputImageSize<ResNet>, 0.25), face);
+
+	thread_local ResNet net = netOrigin;
+	//dlib::matrix<float,0,1> desc = net(face);
+	//ResNet::output_label_type desc = net(face);
+	auto descriptor = net(face);
+	return descriptor;
+	/*auto descriptors = net(face);
+	if (descriptors.empty())
+		return std::nullopt;
+	else
+		return descriptors.front();*/
+	//dlib::image_window win(face, "test");
+	//win.wait_until_closed();
 }
 
 #endif	// !USE_PRODUCER_CONSUMER

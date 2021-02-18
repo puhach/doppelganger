@@ -1,6 +1,8 @@
 #ifndef ENROLLER_H
 #define ENROLLER_H
 
+#include "resnet.h"		// TODO: remove it when a separate face recognizer is used
+
 #include <array>
 #include <fstream>
 #include <filesystem>
@@ -20,7 +22,7 @@
 
 class Enroller
 {
-	typedef dlib::matrix<float, 0, 1> Descriptor;
+	typedef dlib::matrix<float, 0, 1> Descriptor;	// TODO: this is ResNet::output_label_type
 
 public:
 	//Enroller(const std::string& database, const std::string& cache = std::string());
@@ -69,11 +71,12 @@ private:
 	void debugMsg(const std::string& msg);
 
 	std::mutex mtxDbg;	// TEST!		
-	//std::vector<std::tuple<std::string, Descriptor>> 
-	std::map<Descriptor, std::string> faceMap;
+	std::vector<std::tuple<Descriptor, int>> faceDescriptors;
+	//std::map<Descriptor, std::string> faceMap;
 	std::vector<std::string> labels;
 	const dlib::frontal_face_detector faceDetectorOrigin = dlib::get_frontal_face_detector();	// TODO: perhaps, make it static?
 	dlib::shape_predictor landmarkDetector;
+	ResNet netOrigin;
 };	// Enroller
 
 
