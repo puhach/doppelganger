@@ -36,6 +36,8 @@ add_executable(doppelganger
 	main.cpp 
 	facedb.h
 	facedb_impl.h
+	dnnfacedescriptorcomputer.h
+	dnnfacedescriptorcomputer_impl.h
 )
 
 #[[
