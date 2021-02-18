@@ -1,6 +1,7 @@
 #ifndef ENROLLER_H
 #define ENROLLER_H
 
+
 #include "resnet.h"		// TODO: remove it when a separate face recognizer is used
 
 #include <array>
@@ -20,13 +21,14 @@
 
 //#define USE_PRODUCER_CONSUMER	
 
+template <class DescriptorComputer>
 class Enroller
 {
-	typedef dlib::matrix<float, 0, 1> Descriptor;	// TODO: this is ResNet::output_label_type
+	//typedef dlib::matrix<float, 0, 1> Descriptor;	// TODO: this is ResNet::output_label_type
 
 public:
 	//Enroller(const std::string& database, const std::string& cache = std::string());
-	Enroller(const std::string& database, const std::string& landmarkDetectorPath = std::string("shape_predictor_68_face_landmarks.dat"));
+	Enroller(const std::string& database);
 	
 
 	// TODO: define copy/move semantics
@@ -65,19 +67,27 @@ private:
 	std::array<Job, 10> buf;	
 
 #else	// !USE_PRODUCER_CONSUMER
-	std::optional<Descriptor> computeDescriptor(const std::filesystem::path& path);
+	//std::optional<DescriptorComputer::Descriptor> computeDescriptor(const std::filesystem::path& path);
 #endif	// !USE_PRODUCER_CONSUMER
+
+	// This singleton is intended to be used in conjunction with thread-local variables.
+	// It allows us to create one instance of DescriptorComputer and then duplicate it when necessary
+	// (thus, we don't need to deserialize models again). An important consequence of it is that we can't easily 
+	// update the DescriptorComputer without affecting other instances.
+	static DescriptorComputer& getDescriptorComputer();	
 
 	void debugMsg(const std::string& msg);
 
 	std::mutex mtxDbg;	// TEST!		
-	std::vector<std::tuple<Descriptor, int>> faceDescriptors;
-	//std::map<Descriptor, std::string> faceMap;
+	std::vector<std::tuple<typename DescriptorComputer::Descriptor, int>> faceDescriptors;
+	//std::map<Descriptor, std::string> faceMap;	// TODO: give a try to unordered_map
 	std::vector<std::string> labels;
-	const dlib::frontal_face_detector faceDetectorOrigin = dlib::get_frontal_face_detector();	// TODO: perhaps, make it static?
-	dlib::shape_predictor landmarkDetector;
-	ResNet netOrigin;
+	//const dlib::frontal_face_detector faceDetectorOrigin = dlib::get_frontal_face_detector();	// TODO: perhaps, make it static?
+	//dlib::shape_predictor landmarkDetector;
+	//ResNet netOrigin;
+	//static const DescriptorComputer descriptorComputerOrigin;
 };	// Enroller
 
+#include "enroller.cpp"
 
 #endif	// ENROLLER_H

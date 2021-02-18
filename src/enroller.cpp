@@ -12,10 +12,12 @@
 #include <execution>
 
 
-Enroller::Enroller(const std::string& database, const std::string& landmarkDetectorPath)
+//Enroller::Enroller(const std::string& database, const std::string& landmarkDetectorPath)
+template <class DescriptorComputer>
+Enroller<DescriptorComputer>::Enroller(const std::string& database)
 {
-	dlib::deserialize(landmarkDetectorPath) >> this->landmarkDetector;
-	dlib::deserialize("dlib_face_recognition_resnet_model_v1.dat") >> this->netOrigin;
+	/*dlib::deserialize(landmarkDetectorPath) >> this->landmarkDetector;
+	dlib::deserialize("dlib_face_recognition_resnet_model_v1.dat") >> this->netOrigin;*/
 
 	if (std::filesystem::is_directory(database))
 		create(database);
@@ -244,11 +246,12 @@ void Enroller::processFiles(const std::string& outputPath)
 
 #else	// !USE_PRODUCER_CONSUMER
 
-
-void Enroller::create(const std::string& datasetPath)
+template <class DescriptorComputer>
+void Enroller<DescriptorComputer>::create(const std::string& datasetPath)
 {
 	//namespace fs = std::filesystem;
 	//this->faceMap.clear();
+	this->faceDescriptors.clear();
 	this->labels.clear();
 
 	int index = 0, label = 0;
@@ -258,6 +261,8 @@ void Enroller::create(const std::string& datasetPath)
 	{
 		if (dirEntry.is_directory())
 		{
+			std::cout << dirEntry.path() << std::endl;
+
 			auto dirIt = std::filesystem::directory_iterator(dirEntry);
 			//auto end = std::filesystem::end(dirit);
 			//auto beg = std::filesystem::begin(dirit);
@@ -275,28 +280,80 @@ void Enroller::create(const std::string& datasetPath)
 			if (fileEntries.empty())	// skip empty classes
 				continue;
 
-			std::vector<std::optional<Descriptor>> descriptors(fileEntries.size());
+			std::vector<std::optional<typename DescriptorComputer::Descriptor>> descriptors(fileEntries.size());
 			//std::transform(std::execution::par, fileEntries.begin(), fileEntries.end(), descriptors.begin(), [](const auto& file) { return dlib::matrix<float, 0, 1>(); });
 			std::transform(std::execution::par, fileEntries.begin(), fileEntries.end(), descriptors.begin(),
-				[this](const auto& fileEntry)
+				[this](const auto& filePath)
 				{
-					return this->computeDescriptor(fileEntry);
+					thread_local DescriptorComputer descriptorComputer = getDescriptorComputer();
+					// TODO: we could with some effort update thread_local variables by copying the instance of
+					// the original DescriptorComputer, but how fast is that?
+					return descriptorComputer.computeDescriptor(filePath.string());
+					//descriptorComputer.computeDescriptor(fileEntry.path().string());
+					//return this->computeDescriptor(fileEntry);
 				});
 
 
 			// Add the descriptors and labels to the database	
+
+			//auto comp = [](const auto& a, const auto& b) 
+			//{
+			//	if (a.size() < b.size())
+			//		return true;
+
+			//	if (a.size() > b.size())
+			//		return false;
+
+			//	auto ait = a.begin();
+			//	auto bit = b.begin();
+			//	for (; ait != a.end() && bit != b.end();)
+			//	{
+			//		if (*ait < *bit)
+			//			return true;
+			//		if (*ait > *bit)
+			//			return false;
+			//	}
+
+			//	return false;
+			//};
+
+			//std::map<ResNet::output_label_type, int, decltype(comp)> mm(comp);
+			//for (auto& descriptor : descriptors)
+			//{
+			//	if (descriptor)
+			//	{
+			//		// TEST!
+			//		//ResNet::output_label_type				
+			//		dlib::matrix<float, 0, 1>& ref = *descriptor;
+			//		mm[ref] = label;
+			//		//this->faceMap[ref] = 2;
+			//		//mm[ref] = 1;
+			//		//mm[ref] = 2;
+			//		//ds.push_back(ref);
+			//		//this->faceMap[*descriptor] = label;
+			//	}
+			//}
+
+			for (auto& descriptor : descriptors)
+			{
+				if (descriptor)
+					this->faceDescriptors.push_back(std::make_tuple(*descriptor, label));
+			}
+			
+			this->labels.push_back(dirEntry.path().filename().string());
 
 			++label;
 		}	// is directory
 	}	// for dirEntry
 }	// create
 
-
-void Enroller::load(const std::string& databasePath)
+template <class DescriptorComputer>
+void Enroller<DescriptorComputer>::load(const std::string& databasePath)
 {
-
+	// TODO: implement it
 }	// load
 
+/*
 // TODO: move this to a separate class for computing face descriptors
 std::optional<Enroller::Descriptor> Enroller::computeDescriptor(const std::filesystem::path& filePath)
 {
@@ -346,23 +403,20 @@ std::optional<Enroller::Descriptor> Enroller::computeDescriptor(const std::files
 	//dlib::extract_image_chip(im, dlib::get_face_chip_details(landmarks, 256, 0.25), face);	// TODO: add class parameters
 	dlib::extract_image_chip(im, dlib::get_face_chip_details(landmarks, inputImageSize<ResNet>, 0.25), face);
 
-	thread_local ResNet net = netOrigin;
+	thread_local ResNet net = netOrigin;	
 	//dlib::matrix<float,0,1> desc = net(face);
 	//ResNet::output_label_type desc = net(face);
 	auto descriptor = net(face);
 	return descriptor;
-	/*auto descriptors = net(face);
-	if (descriptors.empty())
-		return std::nullopt;
-	else
-		return descriptors.front();*/
+	
 	//dlib::image_window win(face, "test");
 	//win.wait_until_closed();
 }
-
+*/
 #endif	// !USE_PRODUCER_CONSUMER
 
-void Enroller::debugMsg(const std::string& msg)
+template <class DescriptorComputer>
+void Enroller<DescriptorComputer>::debugMsg(const std::string& msg)
 {
 	std::scoped_lock<std::mutex> lock(this->mtxDbg);
 	std::cout << std::this_thread::get_id() << " : " << msg << std::endl;
