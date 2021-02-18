@@ -8,6 +8,21 @@
 #include <dlib/dnn.h>
 #include <dlib/gui_widgets.h>	// TEST!
 
+#include <execution>
+
+
+Enroller::Enroller(const std::string& database, const std::string& landmarkDetectorPath)
+{
+	dlib::deserialize(landmarkDetectorPath) >> this->landmarkDetector;
+
+	if (std::filesystem::is_directory(database))
+		create(database);
+	else
+		load(database);
+}	// ctor
+
+#ifdef USE_PRODUCER_CONSUMER
+
 void Enroller::enroll(const std::string& datasetPath, const std::string& outputPath)
 {
 	// Initialize/reset the state variables before running the threads. Since there are no threads yet, synchronization is not used here.
@@ -18,13 +33,13 @@ void Enroller::enroll(const std::string& datasetPath, const std::string& outputP
 
 	//load(datasetPath);
 	//process(outputPath);
-	auto producer = std::async(std::launch::async, &Enroller::load, this, datasetPath);
+	auto producer = std::async(std::launch::async, &Enroller::listFiles, this, datasetPath);
 
 	//auto consumer = std::async(std::launch::async, &Enroller::process, this, outputPath);
 	std::vector<std::future<void>> consumers(3);	// number of processing threads
 	//for (int i = 0; i < consumers.size(); ++i)
 	for (auto &consumer : consumers)
-		consumer = std::async(std::launch::async, &Enroller::process, this, outputPath);
+		consumer = std::async(std::launch::async, &Enroller::processFiles, this, outputPath);
 
 	//assert(producer.valid() && consumer.valid());	// TODO: make sure it is valid even in case of exception
 	assert(producer.valid());
@@ -46,7 +61,8 @@ void Enroller::enroll(const std::string& datasetPath, const std::string& outputP
 	}
 }	// enroll
 
-void Enroller::load(const std::string& datasetPath)
+
+void Enroller::listFiles(const std::string& datasetPath)
 {
 	// In case of an exception we need to let the consumer know that it has to stop also
 	struct Completer
@@ -117,48 +133,6 @@ void Enroller::load(const std::string& datasetPath)
 				lckNotFull.unlock();
 				//debugMsg("Load: lckNotFull ]");
 
-				/*
-				// Load the image
-				dlib::array2d<dlib::rgb_pixel> im;
-				dlib::load_image(im, fileEntry.path().string());
-
-				// Detect the face
-				// TODO: downsample the image
-				dlib::pyramid_down<2> pyrDown;		// TODO: common
-				dlib::array2d<dlib::rgb_pixel> imDown;	// TODO: common?
-				//if (double scale = std::max(im.nr(), im.nc()) / 300.0; scale > 1)
-				bool downsampled = false;
-				if (std::max(im.nr(), im.nc()) > 300)
-				{
-					pyrDown(im, imDown);
-					im.swap(imDown);
-					downsampled = true;
-				}
-
-				auto faces = faceDetector(im);
-				if (faces.empty())		// no faces detected in this image
-					continue;
-
-				dlib::rectangle faceRect = faces[0];
-				//if (imDown.begin() != imDown.end())		// scale back
-				if (downsampled)
-				{
-					im.swap(imDown);
-					faceRect = pyrDown.rect_up(faceRect);
-				}
-
-				//auto landmarks = landmarkDetector(im, faces[0]);	// TODO: remember to scale back the face rectangle
-				auto landmarks = landmarkDetector(im, faceRect);
-				if (landmarks.num_parts() < 1)	
-					continue;
-
-				// Align the face
-				dlib::matrix<dlib::rgb_pixel> face;		// TODO: matrix vs array2d
-				dlib::extract_image_chip(im, dlib::get_face_chip_details(landmarks, 256, 0.25), face);	// TODO: add class parameters
-
-				//dlib::image_window win(face, "test");
-				//win.wait_until_closed();
-				*/
 
 				// Add to the queue
 				this->buf[index % buf.size()] = Job{ fileEntry.path(), label };
@@ -179,10 +153,11 @@ void Enroller::load(const std::string& datasetPath)
 
 	//debugMsg("Load finished");
 	completer.complete();
-}	// load
+}	
 
-void Enroller::process(const std::string& outputPath)
+void Enroller::processFiles(const std::string& outputPath)
 {
+	// In case of an exception we have to stop the producer(s) 
 	struct Completer
 	{
 		Completer(Enroller& enroller) noexcept
@@ -243,7 +218,6 @@ void Enroller::process(const std::string& outputPath)
 			break;	// unique_lock will release the lock automatically
 		}
 
-		// TODO: use the data
 		Job job = std::move(this->buf[this->processedCount % buf.size()]);
 		++this->processedCount;
 
@@ -256,12 +230,6 @@ void Enroller::process(const std::string& outputPath)
 
 		// TODO: use the data
 		debugMsg(job.filePath.string());
-		//std::cout << job.filePath << std::endl;
-		//Job&& job = std::move(this->buf[index % buf.size()]);
-		//std::cout << job.filePath << std::endl;
-		//++index;
-		// TEST! 
-		//std::this_thread::sleep_for(std::chrono::milliseconds(500));
 		
 		/*std::unique_lock<std::mutex> lckNotFull(this->mtx);
 		--this->loadedCount;
@@ -270,7 +238,77 @@ void Enroller::process(const std::string& outputPath)
 	}	// while
 	
 	completer.complete();
-}	// process
+}	
+
+#else	// !USE_PRODUCER_CONSUMER
+
+
+void Enroller::create(const std::string& datasetPath)
+{
+	//namespace fs = std::filesystem;
+	this->faceMap.clear();
+	this->labels.clear();
+
+	int index = 0, label = 0;
+
+	// TODO: how does it work when datasetPath is not a directory?
+	for (const auto& dirEntry : std::filesystem::directory_iterator(datasetPath))
+	{
+		if (dirEntry.is_directory())
+		{
+			auto dirIt = std::filesystem::directory_iterator(dirEntry);
+			//auto end = std::filesystem::end(dirit);
+			//auto beg = std::filesystem::begin(dirit);
+			//auto diff = end - beg;
+
+			//std::for_each(std::execution::par, beg, end, [](const auto& en) {});
+			std::vector<std::filesystem::path> fileEntries;
+			//std::transform(beg, end, std::back_inserter(fileEntries), [](const auto& entry) { return entry.path(); });
+			std::copy_if(std::filesystem::begin(dirIt), std::filesystem::end(dirIt), std::back_inserter(fileEntries),
+				[](const auto& entry)
+				{
+					return entry.is_regular_file();
+				});
+
+			if (fileEntries.empty())	// skip empty classes
+				continue;
+
+			std::vector<std::optional<Descriptor>> descriptors(fileEntries.size());
+			//std::transform(std::execution::par, fileEntries.begin(), fileEntries.end(), descriptors.begin(), [](const auto& file) { return dlib::matrix<float, 0, 1>(); });
+			std::transform(std::execution::par, fileEntries.begin(), fileEntries.end(), descriptors.begin(),
+				[this](const auto& fileEntry)
+				{
+					return this->computeDescriptor(fileEntry);
+				});
+
+
+			// Add the descriptors and labels to the database			
+
+			for (auto& descriptor : descriptors)
+			{
+				if (descriptor)
+					this->faceMap[*descriptor] = label;
+			}
+
+			this->labels.push_back(dirEntry.path().filename().string());
+
+			++label;
+		}	// is directory
+	}	// for dirEntry
+}	// create
+
+
+void Enroller::load(const std::string& databasePath)
+{
+
+}	// load
+
+std::optional<Enroller::Descriptor> Enroller::computeDescriptor(const std::filesystem::path& filePath)
+{
+	
+}
+
+#endif	// !USE_PRODUCER_CONSUMER
 
 void Enroller::debugMsg(const std::string& msg)
 {
