@@ -38,12 +38,15 @@ private:
 
 	void process(const std::string& outputPath);
 
+	void debugMsg(const std::string& msg);
+
 	//std::string datasetPath;
 	std::mutex mtx;
 	std::condition_variable bufNotFull, bufNotEmpty;
-	int loadedCount = 0;
+	int loadedCount = 0, processedCount = 0;
 	bool loadingFinished = false, aborted = false;
 	std::array<Job, 10> buf;
+	std::mutex mtxDbg;	// TEST!
 };	// Enroller
 
 
