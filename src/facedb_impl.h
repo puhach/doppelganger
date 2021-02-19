@@ -1,10 +1,14 @@
+#ifndef FACEDB_H
+#error Do not include facedb_impl.h directly
+#endif
+
 #include <iostream>	// TEST!
-#include <dlib/image_io.h>
-#include <dlib/image_transforms.h>
-#include <dlib/image_processing.h>
-#include <dlib/image_processing/frontal_face_detector.h>
-#include <dlib/dnn.h>
-#include <dlib/gui_widgets.h>	// TEST!
+//#include <dlib/image_io.h>
+//#include <dlib/image_transforms.h>
+//#include <dlib/image_processing.h>
+//#include <dlib/image_processing/frontal_face_detector.h>
+//#include <dlib/dnn.h>
+//#include <dlib/gui_widgets.h>	// TEST!
 
 #include <execution>
 #include "facedb.h"
@@ -286,7 +290,8 @@ void FaceDb<DescriptorComputer>::create(const std::string& datasetPath)
 					thread_local DescriptorComputer descriptorComputer = getDescriptorComputer();
 					// TODO: we could with some effort update thread_local variables by copying the instance of
 					// the original DescriptorComputer, but how fast is that?
-					return descriptorComputer.computeDescriptor(filePath.string());
+					//return descriptorComputer.computeDescriptor(filePath.string());
+					return descriptorComputer(filePath.string());
 				});
 
 
@@ -415,7 +420,8 @@ template<class DescriptorComputer>
 const DescriptorComputer& FaceDb<DescriptorComputer>::getDescriptorComputer()
 {
 	// TODO: try shape_predictor_5_face_landmarks.dat
-	static DescriptorComputer descriptorComputer("./shape_predictor_68_face_landmarks.dat", "./dlib_face_recognition_resnet_model_v1.dat");	
+	//static DescriptorComputer descriptorComputer("./shape_predictor_68_face_landmarks.dat", "./dlib_face_recognition_resnet_model_v1.dat");	
+	static DescriptorComputer descriptorComputer;
 	return descriptorComputer;
 }
 
