@@ -2,7 +2,7 @@
 #define FACEDB_H
 
 
-#include "resnet.h"		// TODO: remove it when a separate face recognizer is used
+//#include "resnet.h"		// TODO: remove it when a separate face recognizer is used
 
 #include <array>
 #include <fstream>
@@ -15,9 +15,9 @@
 #include <string>
 #include <optional>
 
-#include <dlib/matrix.h>
-#include <dlib/image_processing/frontal_face_detector.h>
-#include <dlib/image_processing/shape_predictor.h>
+//#include <dlib/matrix.h>
+//#include <dlib/image_processing/frontal_face_detector.h>
+//#include <dlib/image_processing/shape_predictor.h>
 
 //#define USE_PRODUCER_CONSUMER	
 
@@ -25,7 +25,7 @@ template <class DescriptorComputer>
 class FaceDb
 {
 	//typedef dlib::matrix<float, 0, 1> Descriptor;	// TODO: this is ResNet::output_label_type
-
+	static_assert(std::is_default_constructible_v<DescriptorComputer>);
 public:
 	//FaceDb(const std::string& database, const std::string& cache = std::string());
 	FaceDb(const std::string& database);
