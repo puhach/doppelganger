@@ -7,7 +7,6 @@
 #include <execution>
 //#include "facedb.h"
 
-
 //FaceDb::FaceDb(const std::string& database, const std::string& landmarkDetectorPath)
 template <class DescriptorComputer>
 FaceDb<DescriptorComputer>::FaceDb(const std::string& database)
@@ -276,18 +275,40 @@ void FaceDb<DescriptorComputer>::create(const std::string& datasetPath)
 			if (fileEntries.empty())	// skip empty classes
 				continue;
 
+			std::exception_ptr eptr;	// a default-constructed std::exception_ptr is a null pointer; it does not point to an exception object
+			//std::mutex emtx;
+			std::atomic<bool> eflag{ false };
 			std::vector<std::optional<typename DescriptorComputer::Descriptor>> descriptors(fileEntries.size());
 			//std::transform(std::execution::par, fileEntries.begin(), fileEntries.end(), descriptors.begin(), [](const auto& file) { return dlib::matrix<float, 0, 1>(); });
 			std::transform(std::execution::par, fileEntries.begin(), fileEntries.end(), descriptors.begin(),
-				[this](const auto& filePath)
+				[this, &eptr, &eflag](const auto& filePath) -> std::optional<typename DescriptorComputer::Descriptor>
 				{
-					thread_local DescriptorComputer descriptorComputer = getDescriptorComputer();
-					// TODO: we could with some effort update thread_local variables by copying the instance of
-					// the original DescriptorComputer, but how fast is that?
-					//return descriptorComputer.computeDescriptor(filePath.string());
-					return descriptorComputer(filePath.string());
-				});
+					return std::nullopt;	// TEST!
+					try
+					{
+						thread_local DescriptorComputer descriptorComputer = getDescriptorComputer();
+						// TODO: we could with some effort update thread_local variables by copying the instance of
+						// the original DescriptorComputer, but how fast is that?
+						//return descriptorComputer.computeDescriptor(filePath.string());
+						return descriptorComputer(filePath.string());
+					}	// try
+					catch (...)
+					{
+						//std::scoped_lock lck(emtx);
 
+						// A read-modify-write operation with this memory order is both an acquire operation and a release operation. 
+						// No memory reads or writes in the current thread can be reordered before or after this store. All writes in 
+						// other threads that release the same atomic variable are visible before the modification and the modification 
+						// is visible in other threads that acquire the same atomic variable.
+						if (!eflag.exchange(true, std::memory_order_acq_rel))	// noexcept
+							eptr = std::current_exception();
+						return std::nullopt;
+					}
+				});	// transform
+
+			
+			if (eptr)	// check whether there was an exception
+				std::rethrow_exception(eptr);
 
 			// Add the descriptors and labels to the database	
 
@@ -329,10 +350,28 @@ void FaceDb<DescriptorComputer>::create(const std::string& datasetPath)
 			//	}
 			//}
 
+			dlib::matrix<float, 0, 1> mat;
+			//this->faceMap[mat] = 3;
+			/*struct Hasher
+			{
+				std::size_t operator()(const dlib::matrix<float, 0, 1>& d) const noexcept
+				{
+					return 112;
+				}
+			};*/
+			//std::unordered_map<dlib::matrix<float,0,1>, int, Hasher> testmap;
+			//std::unordered_map<dlib::matrix<float, 0, 1>, int, decltype(&FaceDb::computeDescriptorHash)> testmap;
+			//testmap[mat] = 3;
+			this->faceMap[mat] = 3;
 			for (auto& descriptor : descriptors)
 			{
 				if (descriptor)
-					this->faceDescriptors.push_back(std::make_tuple(*descriptor, label));
+				{
+					auto &ref = *descriptor;
+					//this->faceDescriptors.push_back(std::make_tuple(*descriptor, label));
+					
+					//this->faceMap.emplace(mat, label);
+				}
 			}
 			
 			this->labels.push_back(dirEntry.path().filename().string());
@@ -368,8 +407,21 @@ const DescriptorComputer& FaceDb<DescriptorComputer>::getDescriptorComputer()
 //}
 
 template <class DescriptorComputer>
-std::size_t FaceDb<DescriptorComputer>::myhash(const MyClass& myclass) noexcept
+std::size_t FaceDb<DescriptorComputer>::DescriptorHasher::operator()(typename DescriptorComputer::Descriptor const & descriptor) const noexcept
 {
-	std::hash<MyClass> h;
-	return 112;
+	return std::hash<typename DescriptorComputer::Descriptor>{}(descriptor);
+	//std::hash<typename DescriptorComputer::Descriptor> h;
+	//std::hash<dlib::matrix<dlib::rgb_pixel>> h;
+	//return FaceDb<DescriptorComputer>::computeDescriptorHash(descriptor);
 }
+
+//template <class DescriptorComputer>
+////std::size_t FaceDb<DescriptorComputer>::computeDescriptorHash(const dlib::matrix<dlib::rgb_pixel>& descriptor) noexcept
+//std::size_t FaceDb<DescriptorComputer>::computeDescriptorHash(typename DescriptorComputer::Descriptor const & descriptor) noexcept
+//{
+//	//std::hash<dlib::matrix<dlib::rgb_pixel>> h;
+//	return std::hash<typename DescriptorComputer::Descriptor>{}(descriptor);
+//	//static_assert(std::is_same_v<dlib::matrix<dlib::rgb_pixel>, typename DescriptorComputer::Descriptor>);
+//	//return 0;
+//}
+
