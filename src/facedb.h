@@ -1,10 +1,10 @@
 #ifndef FACEDB_H
 #define FACEDB_H
 
-// TEST!
+/// TEST!
 //#include <dlib/matrix.h>
 //#include "dlibmatrixhash.h"
-#include "myclass.h"
+//#include "myclass.h"
 
 //#include <array>
 #include <fstream>
@@ -77,15 +77,24 @@ private:
 	static const DescriptorComputer& getDescriptorComputer();	
 
 	//void debugMsg(const std::string& msg);
-	static std::size_t myhash(const MyClass& myclass) noexcept;	// TEST!
+	//static std::size_t myhash(const MyClass& myclass) noexcept;	// TEST!
+	//static std::size_t computeDescriptorHash(const dlib::matrix<dlib::rgb_pixel>& descriptor) noexcept;
+	//static std::size_t computeDescriptorHash(typename DescriptorComputer::Descriptor const & descriptor) noexcept;
+
+	struct DescriptorHasher
+	{
+		std::size_t operator ()(typename DescriptorComputer::Descriptor const& descriptor) const noexcept;
+		//static std::size_t operator ()(typename DescriptorComputer::Descriptor const& descriptor) noexcept;
+	};
 
 	//std::mutex mtxDbg;	// TEST!		
 	std::vector<std::tuple<typename DescriptorComputer::Descriptor, int>> faceDescriptors;
 	//std::map<Descriptor, std::string> faceMap;	// TODO: give a try to unordered_map
-	//std::unordered_map<typename DescriptorComputer::Descriptor, int> faceMap;
-	//std::unordered_map<dlib::matrix<dlib::rgb_pixel>, int> testMap;
+	//std::unordered_map<typename DescriptorComputer::Descriptor, int, decltype(&FaceDb::computeDescriptorHash)> faceMap;
+	std::unordered_map<typename DescriptorComputer::Descriptor, int, DescriptorHasher> faceMap;
+	//std::unordered_map<dlib::matrix<dlib::rgb_pixel>, int, decltype(&FaceDb::computeDescriptorHash)> testMap;
 	//std::unordered_map<MyClass, int> testMap;
-	std::unordered_map<MyClass, int, decltype(&FaceDb::myhash)> testMap;
+	//std::unordered_map<MyClass, int, decltype(&FaceDb::myhash)> testMap;
 	std::vector<std::string> labels;
 };	// FaceDb
 

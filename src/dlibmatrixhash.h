@@ -5,7 +5,6 @@
 
 #include <dlib/matrix.h>
 
-#include "myclass.h"    // TEST!
 
 /*
 * We need to define a hash function for the face descriptor type to be able to use it in an unordered_map.
@@ -16,26 +15,50 @@
 
 namespace std
 {
-    template<> struct hash<MyClass>
+    //template<> struct hash<MyClass>
+    //{
+    //    std::size_t operator()(const MyClass& mat) const noexcept
+    //    {
+    //        return 0;
+    //    }
+    //};
+    
+    template<> struct hash<dlib::rgb_pixel>
     {
-        std::size_t operator()(const MyClass& mat) const noexcept
+        std::size_t operator()(const dlib::rgb_pixel& rgb) const noexcept
         {
-            return 0;
+            return (rgb.red << 16) | (rgb.green << 8) | rgb.blue;
         }
     };
-    
-    template<> struct hash<dlib::matrix<dlib::rgb_pixel>>
+
+    /*template<> struct hash<dlib::matrix<dlib::rgb_pixel>>
     {
         std::size_t operator()(const dlib::matrix<dlib::rgb_pixel>& mat) const noexcept
         {
-            //return mat.begin() == mat.end() ? 0 : mat.size() ^ std::hash<dlib::rgb_pixel>(mat(0));
-            return mat.begin() == mat.end() ? 0 : mat.size() ^ 55;
-            //std::size_t h1 = std::hash<std::string>{}(s.first_name);
-            //std::size_t h2 = std::hash<std::string>{}(s.last_name);
-            //return h1 ^ (h2 << 1); // or use boost::hash_combine
+            static std::hash<dlib::rgb_pixel> pixelHash;
+            return mat.begin() == mat.end() ? 0 : (static_cast<std::size_t>(mat.size())<<25) ^ (pixelHash(mat(0))<<1) ^ pixelHash(mat(mat.size()-1));
+        }
+    };*/
+
+    template<typename T, long nrows, long ncols> struct hash<dlib::matrix<T, nrows, ncols>>
+    {
+        static_assert(std::is_constructible_v<std::hash<T>>, "No standard hash function defined for this type.");
+
+        std::size_t operator()(const dlib::matrix<T, nrows, ncols>& m) const noexcept
+        {
+            static std::hash<T> h;
+            return m.begin() == m.end() ? 0 : static_cast<std::size_t>(m.size()) ^ (h(m(0)) << 1) ^ h(m(m.size() - 1));
         }
     };
-    
+
+    /*template<long nrows, long ncols> struct hash<dlib::matrix<float, nrows, ncols>>
+    {
+        std::size_t operator()(const dlib::matrix<float, nrows, ncols>& m) const noexcept
+        {
+            static std::hash<float> floatHash;
+            return m.begin() == m.end() ? 0 : static_cast<std::size_t>(m.size()) ^ (floatHash(m(0))<<1) ^ floatHash(m(m.size()-1));
+        }
+    };*/
 }  // std
 
 

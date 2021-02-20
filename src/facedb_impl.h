@@ -283,7 +283,6 @@ void FaceDb<DescriptorComputer>::create(const std::string& datasetPath)
 			std::transform(std::execution::par, fileEntries.begin(), fileEntries.end(), descriptors.begin(),
 				[this, &eptr, &eflag](const auto& filePath) -> std::optional<typename DescriptorComputer::Descriptor>
 				{
-					return std::nullopt;	// TEST!
 					try
 					{
 						thread_local DescriptorComputer descriptorComputer = getDescriptorComputer();
@@ -350,7 +349,7 @@ void FaceDb<DescriptorComputer>::create(const std::string& datasetPath)
 			//	}
 			//}
 
-			dlib::matrix<float, 0, 1> mat;
+			//dlib::matrix<float, 0, 1> mat;
 			//this->faceMap[mat] = 3;
 			/*struct Hasher
 			{
@@ -362,15 +361,15 @@ void FaceDb<DescriptorComputer>::create(const std::string& datasetPath)
 			//std::unordered_map<dlib::matrix<float,0,1>, int, Hasher> testmap;
 			//std::unordered_map<dlib::matrix<float, 0, 1>, int, decltype(&FaceDb::computeDescriptorHash)> testmap;
 			//testmap[mat] = 3;
-			this->faceMap[mat] = 3;
+			//this->faceMap[mat] = 3;
 			for (auto& descriptor : descriptors)
 			{
 				if (descriptor)
 				{
-					auto &ref = *descriptor;
+					//auto &ref = *descriptor;
 					//this->faceDescriptors.push_back(std::make_tuple(*descriptor, label));
 					
-					//this->faceMap.emplace(mat, label);
+					this->faceMap.emplace(*descriptor, label);
 				}
 			}
 			
