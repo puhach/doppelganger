@@ -37,8 +37,9 @@ add_executable(doppelganger
 	facedb.h
 	facedb_impl.h
 	dnnfacedescriptorcomputer.h
-	dnnfacedescriptorcomputer_impl.h
+	resnetfacedescriptorcomputer.h
 	resnet.h
+	dlibfaceextractor.h
 )
 
 #[[
