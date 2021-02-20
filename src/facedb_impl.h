@@ -3,15 +3,9 @@
 #endif
 
 #include <iostream>	// TEST!
-//#include <dlib/image_io.h>
-//#include <dlib/image_transforms.h>
-//#include <dlib/image_processing.h>
-//#include <dlib/image_processing/frontal_face_detector.h>
-//#include <dlib/dnn.h>
-//#include <dlib/gui_widgets.h>	// TEST!
-
+#include <filesystem>
 #include <execution>
-#include "facedb.h"
+//#include "facedb.h"
 
 
 //FaceDb::FaceDb(const std::string& database, const std::string& landmarkDetectorPath)
@@ -354,66 +348,7 @@ void FaceDb<DescriptorComputer>::load(const std::string& databasePath)
 	// TODO: implement it
 }	// load
 
-/*
-// TODO: move this to a separate class for computing face descriptors
-std::optional<FaceDb::Descriptor> FaceDb::computeDescriptor(const std::filesystem::path& filePath)
-{
-	
-	//dlib::shape_predictor landmarkDetector;
-	//dlib::deserialize("./shape_predictor_68_face_landmarks.dat") >> landmarkDetector;
 
-	// Load the image
-	dlib::array2d<dlib::rgb_pixel> im;
-	dlib::load_image(im, filePath.string());
-
-	// Detect the face
-	// TODO: downsample the image
-	thread_local dlib::pyramid_down<2> pyrDown;		// TODO: common
-	thread_local dlib::array2d<dlib::rgb_pixel> imDown;	// TODO: common?
-	//if (double scale = std::max(im.nr(), im.nc()) / 300.0; scale > 1)
-	bool downsampled = false;
-	if (std::max(im.nr(), im.nc()) > 300)
-	{
-		pyrDown(im, imDown);
-		im.swap(imDown);
-		downsampled = true;
-	}
-
-	thread_local dlib::frontal_face_detector faceDetector = faceDetectorOrigin;		// copying is faster calling get_frontal_face_detector() every time
-	auto faces = faceDetector(im);
-	if (faces.empty())		// no faces detected in this image
-		return std::nullopt;
-
-	dlib::rectangle faceRect = faces[0];
-	//if (imDown.begin() != imDown.end())		// scale back
-	if (downsampled)
-	{
-		im.swap(imDown);
-		faceRect = pyrDown.rect_up(faceRect);
-	}
-
-	// From Dlib docs: No synchronization is required when using this object.  In particular, a
-	// single instance of this object can be used from multiple threads at the same time.
-	//auto landmarks = landmarkDetector(im, faces[0]);	// TODO: remember to scale back the face rectangle
-	auto landmarks = landmarkDetector(im, faceRect);
-	if (landmarks.num_parts() < 1)
-		return std::nullopt;		// TODO: perhaps, define a specific exception for detection failure?
-
-	// Align the face
-	dlib::matrix<dlib::rgb_pixel> face;		// TODO: matrix vs array2d
-	//dlib::extract_image_chip(im, dlib::get_face_chip_details(landmarks, 256, 0.25), face);	// TODO: add class parameters
-	dlib::extract_image_chip(im, dlib::get_face_chip_details(landmarks, inputImageSize<ResNet>, 0.25), face);
-
-	thread_local ResNet net = netOrigin;	
-	//dlib::matrix<float,0,1> desc = net(face);
-	//ResNet::output_label_type desc = net(face);
-	auto descriptor = net(face);
-	return descriptor;
-	
-	//dlib::image_window win(face, "test");
-	//win.wait_until_closed();
-}
-*/
 #endif	// !USE_PRODUCER_CONSUMER
 
 template<class DescriptorComputer>
@@ -425,9 +360,16 @@ const DescriptorComputer& FaceDb<DescriptorComputer>::getDescriptorComputer()
 	return descriptorComputer;
 }
 
+//template <class DescriptorComputer>
+//void FaceDb<DescriptorComputer>::debugMsg(const std::string& msg)
+//{
+//	std::scoped_lock<std::mutex> lock(this->mtxDbg);
+//	std::cout << std::this_thread::get_id() << " : " << msg << std::endl;
+//}
+
 template <class DescriptorComputer>
-void FaceDb<DescriptorComputer>::debugMsg(const std::string& msg)
+static std::size_t FaceDb<DescriptorComputer>::myhash(const MyClass& myclass) noexcept
 {
-	std::scoped_lock<std::mutex> lock(this->mtxDbg);
-	std::cout << std::this_thread::get_id() << " : " << msg << std::endl;
+	std::hash<MyClass> h;
+	return 112;
 }

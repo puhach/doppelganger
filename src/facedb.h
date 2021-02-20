@@ -1,23 +1,23 @@
 #ifndef FACEDB_H
 #define FACEDB_H
 
-
-//#include "resnet.h"		// TODO: remove it when a separate face recognizer is used
-
-#include <array>
-#include <fstream>
-#include <filesystem>
-#include <future>
-#include <condition_variable>
-#include <cassert>
-//#include <vector>
-#include <map>
-#include <string>
-#include <optional>
-
+// TEST!
 //#include <dlib/matrix.h>
-//#include <dlib/image_processing/frontal_face_detector.h>
-//#include <dlib/image_processing/shape_predictor.h>
+//#include "dlibmatrixhash.h"
+#include "myclass.h"
+
+//#include <array>
+#include <fstream>
+//#include <filesystem>
+//#include <future>
+//#include <condition_variable>
+#include <cassert>
+#include <vector>	// TODO: try unordered map
+//#include <map>
+#include <unordered_map>
+#include <string>
+//#include <optional>
+
 
 //#define USE_PRODUCER_CONSUMER	
 
@@ -45,12 +45,12 @@ public:
 
 private:
 
-	struct Job
-	{		
-		//std::string className;
-		std::filesystem::path filePath;
-		int label = -1;
-	};
+	//struct Job
+	//{		
+	//	//std::string className;
+	//	std::filesystem::path filePath;
+	//	int label = -1;
+	//};
 		
 
 #ifdef USE_PRODUCER_CONSUMER
@@ -76,16 +76,17 @@ private:
 	// update the DescriptorComputer without affecting other instances.
 	static const DescriptorComputer& getDescriptorComputer();	
 
-	void debugMsg(const std::string& msg);
+	//void debugMsg(const std::string& msg);
+	static std::size_t myhash(const MyClass& myclass) noexcept;	// TEST!
 
-	std::mutex mtxDbg;	// TEST!		
+	//std::mutex mtxDbg;	// TEST!		
 	std::vector<std::tuple<typename DescriptorComputer::Descriptor, int>> faceDescriptors;
 	//std::map<Descriptor, std::string> faceMap;	// TODO: give a try to unordered_map
+	//std::unordered_map<typename DescriptorComputer::Descriptor, int> faceMap;
+	//std::unordered_map<dlib::matrix<dlib::rgb_pixel>, int> testMap;
+	//std::unordered_map<MyClass, int> testMap;
+	std::unordered_map<MyClass, int, decltype(&FaceDb::myhash)> testMap;
 	std::vector<std::string> labels;
-	//const dlib::frontal_face_detector faceDetectorOrigin = dlib::get_frontal_face_detector();	// TODO: perhaps, make it static?
-	//dlib::shape_predictor landmarkDetector;
-	//ResNet netOrigin;
-	//static const DescriptorComputer descriptorComputerOrigin;
 };	// FaceDb
 
 #include "facedb_impl.h"

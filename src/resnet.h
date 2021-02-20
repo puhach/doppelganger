@@ -2,6 +2,9 @@
 #define RESNET_H
 
 #include "networktraits.h"
+#include "dlibmatrixhash.h"
+
+#include <optional>
 
 #include <dlib/dnn.h>
 #include <dlib/serialize.h>
@@ -114,6 +117,9 @@ public:
     ResNet(const std::string& modelPath) noexcept(std::is_nothrow_constructible_v<anet_type>)
     {
         dlib::deserialize(modelPath) >> this->net;
+        //// TEST!
+        //OutputLabel l1, l2;
+        //std::swap(l1, l2);
     }
 
     // TODO: define copy/move semantics
@@ -123,12 +129,14 @@ public:
 private:
     anet_type net;
 };  // ResNet
-
+    
 namespace network_traits
 {
     // TODO: this is probably not needed anymore
     template <>
     constexpr inline unsigned long inputImageSize<ResNet> = ResNet::inputImageSize;
 }
+
+
 
 #endif	// RESNET_H

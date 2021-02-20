@@ -7,7 +7,7 @@
 std::optional<DlibFaceExtractor::Output> DlibFaceExtractor::operator() (const std::string& filePath)
 {
 	// Load the image
-	dlib::array2d<dlib::rgb_pixel> im;
+	dlib::array2d<dlib::rgb_pixel> im;	// TODO: array or matrix
 	dlib::load_image(im, filePath);
 
 	// Detect the face
