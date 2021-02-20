@@ -245,8 +245,8 @@ template <class DescriptorComputer>
 void FaceDb<DescriptorComputer>::create(const std::string& datasetPath)
 {
 	//namespace fs = std::filesystem;
-	//this->faceMap.clear();
-	this->faceDescriptors.clear();
+	this->faceMap.clear();
+	//this->faceDescriptors.clear();
 	this->labels.clear();
 
 	int index = 0, label = 0;
@@ -309,66 +309,13 @@ void FaceDb<DescriptorComputer>::create(const std::string& datasetPath)
 			if (eptr)	// check whether there was an exception
 				std::rethrow_exception(eptr);
 
+
 			// Add the descriptors and labels to the database	
 
-			//auto comp = [](const auto& a, const auto& b) 
-			//{
-			//	if (a.size() < b.size())
-			//		return true;
-
-			//	if (a.size() > b.size())
-			//		return false;
-
-			//	auto ait = a.begin();
-			//	auto bit = b.begin();
-			//	for (; ait != a.end() && bit != b.end();)
-			//	{
-			//		if (*ait < *bit)
-			//			return true;
-			//		if (*ait > *bit)
-			//			return false;
-			//	}
-
-			//	return false;
-			//};
-
-			//std::map<ResNet::output_label_type, int, decltype(comp)> mm(comp);
-			//for (auto& descriptor : descriptors)
-			//{
-			//	if (descriptor)
-			//	{
-			//		// TEST!
-			//		//ResNet::output_label_type				
-			//		dlib::matrix<float, 0, 1>& ref = *descriptor;
-			//		mm[ref] = label;
-			//		//this->faceMap[ref] = 2;
-			//		//mm[ref] = 1;
-			//		//mm[ref] = 2;
-			//		//ds.push_back(ref);
-			//		//this->faceMap[*descriptor] = label;
-			//	}
-			//}
-
-			//dlib::matrix<float, 0, 1> mat;
-			//this->faceMap[mat] = 3;
-			/*struct Hasher
-			{
-				std::size_t operator()(const dlib::matrix<float, 0, 1>& d) const noexcept
-				{
-					return 112;
-				}
-			};*/
-			//std::unordered_map<dlib::matrix<float,0,1>, int, Hasher> testmap;
-			//std::unordered_map<dlib::matrix<float, 0, 1>, int, decltype(&FaceDb::computeDescriptorHash)> testmap;
-			//testmap[mat] = 3;
-			//this->faceMap[mat] = 3;
 			for (auto& descriptor : descriptors)
 			{
 				if (descriptor)
 				{
-					//auto &ref = *descriptor;
-					//this->faceDescriptors.push_back(std::make_tuple(*descriptor, label));
-					
 					this->faceMap.emplace(*descriptor, label);
 				}
 			}
@@ -376,6 +323,10 @@ void FaceDb<DescriptorComputer>::create(const std::string& datasetPath)
 			this->labels.push_back(dirEntry.path().filename().string());
 
 			++label;
+
+			// TEST!
+			if (label > 2)
+				break;
 		}	// is directory
 	}	// for dirEntry
 }	// create
@@ -386,6 +337,24 @@ void FaceDb<DescriptorComputer>::load(const std::string& databasePath)
 	// TODO: implement it
 }	// load
 
+template <class DescriptorComputer>
+void FaceDb<DescriptorComputer>::save(const std::string& databasePath)
+{
+	std::ofstream db(databasePath, std::ios::out);
+	if (!db)
+		throw std::runtime_error("Failed to open the database file for writing: " + databasePath);
+
+	db << this->labels.size() << std::endl; 
+	std::copy(this->labels.begin(), this->labels.end(), std::ostream_iterator<std::string>(db, "\n"));
+
+	for (const auto& [descriptor, label] : this->faceMap)
+	{
+		db << descriptor << " " << label << std::endl;
+	}
+
+	if (!db)
+		throw std::runtime_error("Failed to save the database file: " + databasePath);
+}	// save
 
 #endif	// !USE_PRODUCER_CONSUMER
 

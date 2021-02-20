@@ -37,6 +37,8 @@ public:
 
 	void load(const std::string& databasePath);
 
+	void save(const std::string& databasePath);
+
 	//void enroll(const std::string& datasetPath, const std::string& outputPath);
 
 	// TODO: add the abort method
@@ -88,7 +90,7 @@ private:
 	};
 
 	//std::mutex mtxDbg;	// TEST!		
-	std::vector<std::tuple<typename DescriptorComputer::Descriptor, int>> faceDescriptors;
+	//std::vector<std::tuple<typename DescriptorComputer::Descriptor, int>> faceDescriptors;
 	//std::map<Descriptor, std::string> faceMap;	// TODO: give a try to unordered_map
 	//std::unordered_map<typename DescriptorComputer::Descriptor, int, decltype(&FaceDb::computeDescriptorHash)> faceMap;
 	std::unordered_map<typename DescriptorComputer::Descriptor, int, DescriptorHasher> faceMap;
