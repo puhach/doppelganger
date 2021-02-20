@@ -7,7 +7,18 @@
 
 //using ResNetFaceDescriptorComputer = DnnFaceDescriptorComputer<ResNet, DlibFaceExtractor>;
 
-class ResNetFaceDescriptorComputer : DnnFaceDescriptorComputer<ResNet, DlibFaceExtractor>	// private inheritance prevents slicing
+/*
+* ResNetFaceDescriptorComputer is a default-constructible class for computing face descriptors using ResNet neural network.
+* The face is cropped from an input image by means of DlibFaceExtractor. 
+* 
+* Private inheritance prevents slicing and accidental deletion via base class pointer. On the other hand, when subclassed
+* privately, ResNetFaceDescriptorComputer is not treated as a type of DnnFaceDescriptorComputer<ResNet, DlibFaceExtractor>, 
+* so we won't be able to pass it to a function taking a pointer/reference to DnnFaceDescriptorComputer<ResNet, DlibFaceExtractor>. 
+* Alternatively, we could define a virtual copy interface and make DnnFaceDescriptorComputer destructor virtual, but that
+* would lead to performance overhead.
+*/
+
+class ResNetFaceDescriptorComputer : DnnFaceDescriptorComputer<ResNet, DlibFaceExtractor>	
 {
 public:
 	// This is an alternative to std::is_nothrow_constructible (slightly shorter in this case). 
@@ -17,12 +28,7 @@ public:
 	ResNetFaceDescriptorComputer() noexcept(noexcept(::new (nullptr) DnnFaceDescriptorComputer(faceRecognitionModel, landmarkDetectionModel)))
 		: DnnFaceDescriptorComputer(faceRecognitionModel, DlibFaceExtractor{ landmarkDetectionModel, ResNet::inputImageSize, 0.25 })
 	{ }
-	/*template <class ResNetT, class FaceExtractorT>
-	ResNetFaceDescriptorComputer(ResNetT&& resnet, FaceExtractorT&& faceExtractor)
-		: DnnFaceDescriptor(std::forward<ResNetT>(resnet), std::forward<FaceExtractorT>(faceExtractor))
-	{
 
-	}*/
 	
 	// TODO: define copy/move semantics
 
@@ -33,8 +39,7 @@ public:
 	using DnnFaceDescriptorComputer::Descriptor;
 
 private:
-	//ResNet resnet{"./dlib_face_recognition_resnet_model_v1.dat"};
-	//DlibFaceExtractor faceExtractor{"./shape_predictor_68_face_landmarks.dat"};
+	// TODO: try 5-landmark detector
 	static inline const std::string faceRecognitionModel{ "./dlib_face_recognition_resnet_model_v1.dat" };
 	static inline const std::string landmarkDetectionModel{ "./shape_predictor_68_face_landmarks.dat" };
 };	// ResNetFaceDescriptorComputer
