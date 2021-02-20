@@ -7,13 +7,13 @@
 
 
 
-template <class NetworkT, class FaceExtractorT>
+template <class NetworkType, class FaceExtractorType>
 class DnnFaceDescriptorComputer
 {
-	static_assert(std::is_convertible_v<typename FaceExtractorT::Output, typename NetworkT::Input>, "FaceExtractor output type must be compatible with Network input type.");
+	static_assert(std::is_convertible_v<typename FaceExtractorType::Output, typename NetworkType::Input>, "FaceExtractor output type must be compatible with Network input type.");
 public:
-	using Network = NetworkT;
-	using FaceExtractor = FaceExtractorT;
+	using Network = NetworkType;
+	using FaceExtractor = FaceExtractorType;
 	using Descriptor = typename Network::OutputLabel;
 
 	template <class NetworkT, class FaceExtractorT>

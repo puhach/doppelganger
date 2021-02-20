@@ -40,9 +40,10 @@ add_executable(doppelganger
 	resnetfacedescriptorcomputer.h
 	resnet.h
 	dlibfaceextractor.h
+	dlibfaceextractor.cpp
 )
 
-#[[
+
 # GCC requires tbb to be linked in order to use execution policies
 set(LINK_LIBS ${OpenCV_LIBS} dlib::dlib)
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")    
@@ -51,8 +52,9 @@ endif()
 
 #message(${LINK_LIBS})
 target_link_libraries(doppelganger ${LINK_LIBS})
-]]
-target_link_libraries(doppelganger ${OpenCV_LIBS} dlib::dlib)
+
+#target_link_libraries(doppelganger ${OpenCV_LIBS} dlib::dlib)
+
 		
 	
 # TODO: Copy Dlib models to the output directory

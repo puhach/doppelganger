@@ -368,7 +368,7 @@ const DescriptorComputer& FaceDb<DescriptorComputer>::getDescriptorComputer()
 //}
 
 template <class DescriptorComputer>
-static std::size_t FaceDb<DescriptorComputer>::myhash(const MyClass& myclass) noexcept
+std::size_t FaceDb<DescriptorComputer>::myhash(const MyClass& myclass) noexcept
 {
 	std::hash<MyClass> h;
 	return 112;

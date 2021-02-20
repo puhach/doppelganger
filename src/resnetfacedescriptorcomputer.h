@@ -20,6 +20,9 @@
 
 class ResNetFaceDescriptorComputer : DnnFaceDescriptorComputer<ResNet, DlibFaceExtractor>	
 {
+    // TODO: try 5-landmark detector
+	static inline const std::string faceRecognitionModel{ "./dlib_face_recognition_resnet_model_v1.dat" };
+	static inline const std::string landmarkDetectionModel{ "./shape_predictor_68_face_landmarks.dat" };
 public:
 	// This is an alternative to std::is_nothrow_constructible (slightly shorter in this case). 
 	// Since we don't care about the destructor, we use "new" rather than T(arg). Also it's a global placement new
@@ -39,9 +42,7 @@ public:
 	using DnnFaceDescriptorComputer::Descriptor;
 
 private:
-	// TODO: try 5-landmark detector
-	static inline const std::string faceRecognitionModel{ "./dlib_face_recognition_resnet_model_v1.dat" };
-	static inline const std::string landmarkDetectionModel{ "./shape_predictor_68_face_landmarks.dat" };
+	
 };	// ResNetFaceDescriptorComputer
 
 #endif	// RESNETFACEDESCRIPTORCOMPUTER_H
