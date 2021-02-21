@@ -3,8 +3,12 @@
 #endif
 
 #include <iostream>	// TEST!
+#include <fstream>
+#include <iomanip>
 #include <filesystem>
 #include <execution>
+#include <atomic>
+#include <optional>
 //#include "facedb.h"
 
 //FaceDb::FaceDb(const std::string& database, const std::string& landmarkDetectorPath)
@@ -249,7 +253,7 @@ void FaceDb<DescriptorComputer>::create(const std::string& datasetPath)
 	//this->faceDescriptors.clear();
 	this->labels.clear();
 
-	int index = 0, label = 0;
+	std::size_t label = 0;
 
 	// TODO: how does it work when datasetPath is not a directory?
 	for (const auto& dirEntry : std::filesystem::directory_iterator(datasetPath))
@@ -334,7 +338,29 @@ void FaceDb<DescriptorComputer>::create(const std::string& datasetPath)
 template <class DescriptorComputer>
 void FaceDb<DescriptorComputer>::load(const std::string& databasePath)
 {
-	// TODO: implement it
+	std::ifstream db(databasePath, std::ios::in);
+	if (!db)
+		throw std::runtime_error("Unable to open the database file: " + databasePath);
+
+	std::size_t numLabels;
+	db >> numLabels;
+	if (!db)
+		throw std::runtime_error("Error while reading the number of labels.");
+
+	this->labels.resize(numLabels);
+	for (std::size_t i = 0; (i < numLabels) && db; ++i)
+		db >> std::quoted(this->labels[i]);
+		
+	std::size_t numDescriptors = 0;
+	db >> numDescriptors;
+	this->faceMap.reserve(numDescriptors);
+	for (std::size_t i = 0; (i < numDescriptors) && db; ++i)
+	{
+		typename DescriptorComputer::Descriptor d;		// TODO: declare an alias
+		std::size_t label;
+		db >> d >> label;
+		this->faceMap[d] = label;
+	}	// i
 }	// load
 
 template <class DescriptorComputer>
@@ -347,9 +373,10 @@ void FaceDb<DescriptorComputer>::save(const std::string& databasePath)
 	db << this->labels.size() << std::endl; 
 	std::copy(this->labels.begin(), this->labels.end(), std::ostream_iterator<std::string>(db, "\n"));
 
+	db << this->faceMap.size() << std::endl;
 	for (const auto& [descriptor, label] : this->faceMap)
 	{
-		db << descriptor << " " << label << std::endl;
+		db << descriptor << std::endl << label << std::endl;
 	}
 
 	if (!db)
