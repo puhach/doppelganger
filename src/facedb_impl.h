@@ -282,10 +282,10 @@ void FaceDb<DescriptorComputer>::create(const std::string& datasetPath)
 			std::exception_ptr eptr;	// a default-constructed std::exception_ptr is a null pointer; it does not point to an exception object
 			//std::mutex emtx;
 			std::atomic<bool> eflag{ false };
-			std::vector<std::optional<typename DescriptorComputer::Descriptor>> descriptors(fileEntries.size());
+			std::vector<std::optional<Descriptor>> descriptors(fileEntries.size());
 			//std::transform(std::execution::par, fileEntries.begin(), fileEntries.end(), descriptors.begin(), [](const auto& file) { return dlib::matrix<float, 0, 1>(); });
 			std::transform(std::execution::par, fileEntries.begin(), fileEntries.end(), descriptors.begin(),
-				[this, &eptr, &eflag](const auto& filePath) -> std::optional<typename DescriptorComputer::Descriptor>
+				[this, &eptr, &eflag](const auto& filePath) -> std::optional<Descriptor>
 				{
 					try
 					{
@@ -327,10 +327,6 @@ void FaceDb<DescriptorComputer>::create(const std::string& datasetPath)
 			this->labels.push_back(dirEntry.path().filename().string());
 
 			++label;
-
-			// TEST!
-			if (label > 2)
-				break;
 		}	// is directory
 	}	// for dirEntry
 }	// create
@@ -353,10 +349,11 @@ void FaceDb<DescriptorComputer>::load(const std::string& databasePath)
 		
 	std::size_t numDescriptors = 0;
 	db >> numDescriptors;
+	this->faceMap.clear();
 	this->faceMap.reserve(numDescriptors);
 	for (std::size_t i = 0; (i < numDescriptors) && db; ++i)
 	{
-		typename DescriptorComputer::Descriptor d;		// TODO: declare an alias
+		Descriptor d;		
 		std::size_t label;
 		db >> d >> label;
 		this->faceMap[d] = label;

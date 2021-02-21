@@ -98,7 +98,9 @@ int main(int argc, char* argv[])
 		//FaceDb faceDb(db, cache);
 		FaceDb<ResNetFaceDescriptorComputer> faceDb(db);	// TODO: do we need a default constructor?
 		//faceDb.find("some file", ResNetDescriptorComparator(0.7));
-
+		faceDb.save("z:/my.db");
+		faceDb.load("z:/my.db");
+		//FaceDb<ResNetFaceDescriptorComputer> faceDb("z:/my.db");
 		//FaceDb<DnnFaceDescriptorComputer<ResNet>> faceDb(db);
 		//faceDb.find("some file", DnnDescriptorComparator<ResNet>(0.7));
 		//faceDb.find(query);
