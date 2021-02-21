@@ -16,7 +16,7 @@
 //#include <map>
 #include <unordered_map>
 #include <string>
-//#include <optional>
+#include <optional>
 
 
 //#define USE_PRODUCER_CONSUMER	
@@ -24,8 +24,21 @@
 template <class DescriptorComputer>
 class FaceDb
 {
-	//typedef dlib::matrix<float, 0, 1> Descriptor;	// TODO: this is ResNet::output_label_type
-	static_assert(std::is_default_constructible_v<DescriptorComputer>);
+	using Descriptor = typename DescriptorComputer::Descriptor;
+
+	static_assert(std::is_default_constructible_v<DescriptorComputer>, "The descriptor computer type must be default-constructible.");
+	static_assert(std::is_invocable_r_v<Descriptor, DescriptorComputer, std::string> || 
+		std::is_invocable_r_v<std::optional<Descriptor>, DescriptorComputer, std::string>, 
+		"The descriptor computer must be invocable with a file path string and return a descriptor or optional<descriptor>.");
+	static_assert(std::is_default_constructible_v<Descriptor>, "The descriptor type must be default-constructible.");
+	static_assert(std::is_default_constructible_v<std::equal_to<Descriptor>>, "Descriptors must be comparable for equality.");
+	static_assert(std::is_default_constructible_v<std::hash<Descriptor>> && std::is_copy_assignable_v<std::hash<Descriptor>> &&
+		std::is_swappable_v<std::hash<Descriptor>> && std::is_destructible_v<std::hash<Descriptor>>, 
+		"The standard hash function object for the descriptor type must be defined.");
+	
+	// It would also be nice to check whether Descriptor can be serialized/deserialized by means of >> and << operators,
+	// but there seems to be no simple way to do it
+
 public:
 	//FaceDb(const std::string& database, const std::string& cache = std::string());
 	FaceDb(const std::string& database);
@@ -79,24 +92,15 @@ private:
 	static const DescriptorComputer& getDescriptorComputer();	
 
 	//void debugMsg(const std::string& msg);
-	//static std::size_t myhash(const MyClass& myclass) noexcept;	// TEST!
-	//static std::size_t computeDescriptorHash(const dlib::matrix<dlib::rgb_pixel>& descriptor) noexcept;
-	//static std::size_t computeDescriptorHash(typename DescriptorComputer::Descriptor const & descriptor) noexcept;
 
 	struct DescriptorHasher
 	{
-		std::size_t operator ()(typename DescriptorComputer::Descriptor const& descriptor) const noexcept;
-		//static std::size_t operator ()(typename DescriptorComputer::Descriptor const& descriptor) noexcept;
+		//std::size_t operator ()(typename DescriptorComputer::Descriptor const& descriptor) const noexcept;
+		std::size_t operator ()(Descriptor const& descriptor) const noexcept;
 	};
 
-	//std::mutex mtxDbg;	// TEST!		
-	//std::vector<std::tuple<typename DescriptorComputer::Descriptor, int>> faceDescriptors;
-	//std::map<Descriptor, std::string> faceMap;	// TODO: give a try to unordered_map
-	//std::unordered_map<typename DescriptorComputer::Descriptor, int, decltype(&FaceDb::computeDescriptorHash)> faceMap;
-	std::unordered_map<typename DescriptorComputer::Descriptor, std::size_t, DescriptorHasher> faceMap;
-	//std::unordered_map<dlib::matrix<dlib::rgb_pixel>, int, decltype(&FaceDb::computeDescriptorHash)> testMap;
-	//std::unordered_map<MyClass, int> testMap;
-	//std::unordered_map<MyClass, int, decltype(&FaceDb::myhash)> testMap;
+	//std::unordered_map<typename DescriptorComputer::Descriptor, std::size_t, DescriptorHasher> faceMap;
+	std::unordered_map<Descriptor, std::size_t, DescriptorHasher> faceMap;
 	std::vector<std::string> labels;
 };	// FaceDb
 
