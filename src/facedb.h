@@ -7,7 +7,7 @@
 //#include "myclass.h"
 
 //#include <array>
-#include <fstream>
+//#include <fstream>
 //#include <filesystem>
 //#include <future>
 //#include <condition_variable>
@@ -93,7 +93,7 @@ private:
 	//std::vector<std::tuple<typename DescriptorComputer::Descriptor, int>> faceDescriptors;
 	//std::map<Descriptor, std::string> faceMap;	// TODO: give a try to unordered_map
 	//std::unordered_map<typename DescriptorComputer::Descriptor, int, decltype(&FaceDb::computeDescriptorHash)> faceMap;
-	std::unordered_map<typename DescriptorComputer::Descriptor, int, DescriptorHasher> faceMap;
+	std::unordered_map<typename DescriptorComputer::Descriptor, std::size_t, DescriptorHasher> faceMap;
 	//std::unordered_map<dlib::matrix<dlib::rgb_pixel>, int, decltype(&FaceDb::computeDescriptorHash)> testMap;
 	//std::unordered_map<MyClass, int> testMap;
 	//std::unordered_map<MyClass, int, decltype(&FaceDb::myhash)> testMap;
