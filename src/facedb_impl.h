@@ -245,6 +245,7 @@ void Enroller::processFiles(const std::string& outputPath)
 
 #else	// !USE_PRODUCER_CONSUMER
 
+/*
 template <class DescriptorComputer>
 void FaceDb<DescriptorComputer>::create(const std::string& datasetPath)
 {
@@ -255,7 +256,6 @@ void FaceDb<DescriptorComputer>::create(const std::string& datasetPath)
 
 	std::size_t label = 0;
 
-	// TODO: how does it work when datasetPath is not a directory?
 	for (const auto& dirEntry : std::filesystem::directory_iterator(datasetPath))
 	{
 		if (dirEntry.is_directory())
@@ -263,13 +263,8 @@ void FaceDb<DescriptorComputer>::create(const std::string& datasetPath)
 			std::cout << dirEntry.path() << std::endl;
 
 			auto dirIt = std::filesystem::directory_iterator(dirEntry);
-			//auto end = std::filesystem::end(dirit);
-			//auto beg = std::filesystem::begin(dirit);
-			//auto diff = end - beg;
 
-			//std::for_each(std::execution::par, beg, end, [](const auto& en) {});
 			std::vector<std::filesystem::path> fileEntries;
-			//std::transform(beg, end, std::back_inserter(fileEntries), [](const auto& entry) { return entry.path(); });
 			std::copy_if(std::filesystem::begin(dirIt), std::filesystem::end(dirIt), std::back_inserter(fileEntries),
 				[](const auto& entry)
 				{
@@ -289,10 +284,11 @@ void FaceDb<DescriptorComputer>::create(const std::string& datasetPath)
 				{
 					try
 					{
-						thread_local DescriptorComputer descriptorComputer = getDescriptorComputer();
-						// TODO: we could with some effort update thread_local variables by copying the instance of
-						// the original DescriptorComputer, but how fast is that?
-						//return descriptorComputer.computeDescriptor(filePath.string());
+						// For performance reasons descriptor computer is not configurable: it will be default-constructed for all instances
+						// of FaceDb template specialized with the same descriptor computer type and copied for each thread only once.
+						// We could with some effort update thread_local variables by copying the modifiable instance of the original 
+						// descriptor computer, but it still would be rather slow. 
+						thread_local DescriptorComputer descriptorComputer = getDescriptorComputer();						
 						return descriptorComputer(filePath.string());
 					}	// try
 					catch (...)
@@ -325,60 +321,209 @@ void FaceDb<DescriptorComputer>::create(const std::string& datasetPath)
 			}
 			
 			this->labels.push_back(dirEntry.path().filename().string());
-
+			
 			++label;
 		}	// is directory
 	}	// for dirEntry
 }	// create
+*/
+
+template <class DescriptorComputer>
+void FaceDb<DescriptorComputer>::create(const std::string& datasetPath)
+{
+	this->faceMap.clear();
+	this->labels.clear();
+
+	std::size_t label = 0;
+	//std::vector<std::pair<std::filesystem::path, std::size_t>> fileEntries;
+	std::vector<std::filesystem::path> fileEntries;
+	std::vector<std::size_t> fileLabels;
+
+	for (const auto& dirEntry : std::filesystem::directory_iterator(datasetPath))
+	{
+		if (dirEntry.is_directory())
+		{
+			std::cout << dirEntry.path() << std::endl;
+
+			auto dirIt = std::filesystem::directory_iterator(dirEntry);
+			
+			std::copy_if(std::filesystem::begin(dirIt), std::filesystem::end(dirIt), std::back_inserter(fileEntries),
+				[](const auto& entry)
+				{
+					return entry.is_regular_file();
+				});
+						
+			//std::size_t n = 
+			//fileLabels.resize();
+			std::fill_n(std::back_inserter(fileLabels), fileEntries.size()-fileLabels.size(), label);
+			
+			this->labels.push_back(dirEntry.path().string());
+
+			++label;
+		}	// is directory
+	}	// for dirEntry
+
+	assert(fileEntries.size() == fileLabels.size());
+	std::exception_ptr eptr;	// a default-constructed std::exception_ptr is a null pointer; it does not point to an exception object
+	std::atomic<bool> eflag{ false };
+	std::vector<std::optional<Descriptor>> descriptors(fileEntries.size());
+	//std::transform(std::execution::par, fileEntries.begin(), fileEntries.end(), descriptors.begin(), [](const auto& file) { return dlib::matrix<float, 0, 1>(); });
+	std::transform(std::execution::par, fileEntries.begin(), fileEntries.end(), descriptors.begin(),
+		[this, &eptr, &eflag](const auto& filePath) -> std::optional<Descriptor>
+		{
+			try
+			{
+				// For performance reasons descriptor computer is not configurable: it will be default-constructed for all instances
+				// of FaceDb template specialized with the same descriptor computer type and copied for each thread only once.
+				// We could with some effort update thread_local variables by copying the modifiable instance of the original 
+				// descriptor computer, but it still would be rather slow. 
+				thread_local DescriptorComputer descriptorComputer = getDescriptorComputer();
+				return descriptorComputer(filePath.string());
+			}	// try
+			catch (...)
+			{
+				//std::scoped_lock lck(emtx);
+
+				// A read-modify-write operation with this memory order is both an acquire operation and a release operation. 
+				// No memory reads or writes in the current thread can be reordered before or after this store. All writes in 
+				// other threads that release the same atomic variable are visible before the modification and the modification 
+				// is visible in other threads that acquire the same atomic variable.
+				if (!eflag.exchange(true, std::memory_order_acq_rel))	// noexcept
+					eptr = std::current_exception();
+				return std::nullopt;
+			}
+		});	// transform
+
+
+	if (eptr)	// check whether there was an exception
+		std::rethrow_exception(eptr);
+
+
+	// Add the descriptors and labels to the database	
+
+	for (std::size_t i = 0; i < descriptors.size(); ++i)
+	{
+		if (descriptors[i])
+			this->faceMap.emplace(*descriptors[i], fileLabels[i]);
+	}
+}	// create
+
+
+//template <class DescriptorComputer>
+//void FaceDb<DescriptorComputer>::load(const std::string& databasePath)
+//{
+//	std::ifstream db(databasePath, std::ios::in);
+//	if (!db)
+//		throw std::runtime_error("Unable to open the database file: " + databasePath);
+//
+//	std::size_t numLabels;
+//	db >> numLabels;
+//	if (!db)
+//		throw std::runtime_error("Error while reading the number of labels.");
+//
+//	this->labels.resize(numLabels);
+//	for (std::size_t i = 0; (i < numLabels) && db; ++i)
+//		db >> std::quoted(this->labels[i]);
+//		
+//	std::size_t numDescriptors = 0;
+//	db >> numDescriptors;
+//	this->faceMap.clear();
+//	this->faceMap.reserve(numDescriptors);
+//	for (std::size_t i = 0; (i < numDescriptors) && db; ++i)
+//	{
+//		Descriptor d;		
+//		std::size_t label;
+//		db >> d >> label;
+//		this->faceMap[d] = label;
+//	}	// i
+//}	// load
+
 
 template <class DescriptorComputer>
 void FaceDb<DescriptorComputer>::load(const std::string& databasePath)
 {
-	std::ifstream db(databasePath, std::ios::in);
-	if (!db)
-		throw std::runtime_error("Unable to open the database file: " + databasePath);
-
-	std::size_t numLabels;
-	db >> numLabels;
-	if (!db)
-		throw std::runtime_error("Error while reading the number of labels.");
-
-	this->labels.resize(numLabels);
-	for (std::size_t i = 0; (i < numLabels) && db; ++i)
-		db >> std::quoted(this->labels[i]);
-		
-	std::size_t numDescriptors = 0;
-	db >> numDescriptors;
-	this->faceMap.clear();
-	this->faceMap.reserve(numDescriptors);
-	for (std::size_t i = 0; (i < numDescriptors) && db; ++i)
+	try
 	{
-		Descriptor d;		
-		std::size_t label;
-		db >> d >> label;
-		this->faceMap[d] = label;
-	}	// i
+		std::ifstream db(databasePath, std::ios::in);
+
+		// Set the mask of error states on occurrence of which the stream throws an exception of type failure
+		// (EOF is also included because we need all the data, not just a part of it)
+		db.exceptions(std::ifstream::badbit | std::ifstream::failbit | std::ifstream::eofbit);
+
+		std::size_t numLabels;
+		db >> numLabels;
+
+		this->labels.resize(numLabels);
+		for (std::size_t i = 0; i < numLabels; ++i)
+			db >> std::quoted(this->labels[i]);		// read each label string removing quotes
+
+		std::size_t numDescriptors = 0;
+		db >> numDescriptors;
+		this->faceMap.clear();
+		this->faceMap.reserve(numDescriptors);
+		for (std::size_t i = 0; i < numDescriptors; ++i)
+		{
+			Descriptor d;		// descriptors must be default-constructible
+			std::size_t label;
+			db >> d >> label;		// descriptors must be deserializable by means of >> operator
+			//this->faceMap[d] = label;
+			this->faceMap.emplace(d, label);	// add the descriptor and the label to the map
+		}	// i
+	}	// try
+	catch (const std::ios_base::failure& e)
+	{
+		throw std::ios_base::failure("Failed to load the database file " + databasePath, e.code());
+	}
 }	// load
+
+
+//template <class DescriptorComputer>
+//void FaceDb<DescriptorComputer>::save(const std::string& databasePath)
+//{
+//	std::ofstream db(databasePath, std::ios::out);
+//	if (!db)
+//		throw std::runtime_error("Failed to open the database file for writing: " + databasePath);
+//
+//	db << this->labels.size() << std::endl; 
+//	std::copy(this->labels.begin(), this->labels.end(), std::ostream_iterator<std::string>(db, "\n"));
+//
+//	db << this->faceMap.size() << std::endl;
+//	for (const auto& [descriptor, label] : this->faceMap)
+//	{
+//		db << descriptor << std::endl << label << std::endl;
+//	}
+//
+//	if (!db)
+//		throw std::runtime_error("Failed to save the database file: " + databasePath);
+//}	// save
 
 template <class DescriptorComputer>
 void FaceDb<DescriptorComputer>::save(const std::string& databasePath)
 {
-	std::ofstream db(databasePath, std::ios::out);
-	if (!db)
-		throw std::runtime_error("Failed to open the database file for writing: " + databasePath);
-
-	db << this->labels.size() << std::endl; 
-	std::copy(this->labels.begin(), this->labels.end(), std::ostream_iterator<std::string>(db, "\n"));
-
-	db << this->faceMap.size() << std::endl;
-	for (const auto& [descriptor, label] : this->faceMap)
+	try
 	{
-		db << descriptor << std::endl << label << std::endl;
-	}
+		std::ofstream db(databasePath, std::ios::out);
+		db.exceptions(std::ios_base::badbit | std::ios_base::failbit);
 
-	if (!db)
-		throw std::runtime_error("Failed to save the database file: " + databasePath);
+		db << this->labels.size() << std::endl;
+		//std::copy(this->labels.begin(), this->labels.end(), std::ostream_iterator<std::string>(db, "\n"));
+		for (const auto& label : labels)
+		{			
+			db << std::quoted(label) << std::endl;		// quote the labels just in case there is a space
+		}
+
+		db << this->faceMap.size() << std::endl;
+		for (const auto& [descriptor, label] : this->faceMap)
+		{
+			db << descriptor << std::endl << label << std::endl;
+		}
+	} // try
+	catch (const std::ios_base::failure& e)
+	{
+		throw std::ios_base::failure("Failed to save the database file " + databasePath, e.code());
+	}
 }	// save
+
 
 #endif	// !USE_PRODUCER_CONSUMER
 
