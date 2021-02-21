@@ -40,6 +40,7 @@ class FaceDb
 	// but there seems to be no simple way to do it
 
 public:
+	FaceDb() = default;
 	//FaceDb(const std::string& database, const std::string& cache = std::string());
 	FaceDb(const std::string& database);
 	

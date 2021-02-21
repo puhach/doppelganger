@@ -96,11 +96,13 @@ int main(int argc, char* argv[])
 		std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed2).count() << std::endl;*/
 
 		//FaceDb faceDb(db, cache);
-		FaceDb<ResNetFaceDescriptorComputer> faceDb(db);	// TODO: do we need a default constructor?
+		FaceDb<ResNetFaceDescriptorComputer> faceDb;
+		faceDb.create(db);
+		//FaceDb<ResNetFaceDescriptorComputer> faceDb(db);	// TODO: do we need a default constructor?
 		//faceDb.find("some file", ResNetDescriptorComparator(0.7));
-		faceDb.save("z:/my.db");
-		faceDb.load("z:/my.db");
-		//FaceDb<ResNetFaceDescriptorComputer> faceDb("z:/my.db");
+		faceDb.save("z:/akla/my.db");
+		//faceDb.load("z:/my.db");
+		//FaceDb<ResNetFaceDescriptorComputer> faceDb("z:/aalal/my.db");
 		//FaceDb<DnnFaceDescriptorComputer<ResNet>> faceDb(db);
 		//faceDb.find("some file", DnnDescriptorComparator<ResNet>(0.7));
 		//faceDb.find(query);
