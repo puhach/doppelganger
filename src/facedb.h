@@ -21,7 +21,7 @@
 
 //#define USE_PRODUCER_CONSUMER	
 
-template <class DescriptorComputer>
+template <class DescriptorComputer, class DescriptorMetric>
 class FaceDb
 {
 	using Descriptor = typename DescriptorComputer::Descriptor;
@@ -30,11 +30,17 @@ class FaceDb
 	static_assert(std::is_invocable_r_v<Descriptor, DescriptorComputer, std::string> || 
 		std::is_invocable_r_v<std::optional<Descriptor>, DescriptorComputer, std::string>, 
 		"The descriptor computer must be invocable with a file path string and return a descriptor or optional<descriptor>.");
-	static_assert(std::is_default_constructible_v<Descriptor>, "The descriptor type must be default-constructible.");
+	//static_assert(std::is_constructible_v<std::minus<Descriptor>>, "Descriptors must define a distance metric.");
+	//static_assert(std::is_invocable_r_v<double, std::minus<Descriptor>, Descriptor, Descriptor>, 
+	//	"The distance metric for descriptors must be convertible to double.");	
+	static_assert(std::is_default_constructible_v<Descriptor>, "Descriptors must be default-constructible.");
 	static_assert(std::is_default_constructible_v<std::equal_to<Descriptor>>, "Descriptors must be comparable for equality.");
 	static_assert(std::is_default_constructible_v<std::hash<Descriptor>> && std::is_copy_assignable_v<std::hash<Descriptor>> &&
 		std::is_swappable_v<std::hash<Descriptor>> && std::is_destructible_v<std::hash<Descriptor>>, 
 		"The standard hash function object for the descriptor type must be defined.");
+	static_assert(std::is_default_constructible_v<DescriptorMetric>, "The descriptor metric must be default-constructible.");
+	static_assert(std::is_invocable_r_v<double, DescriptorMetric, Descriptor, Descriptor>,
+		"The distance metric for descriptors must be defined and convertible to double.");
 	
 	// It would also be nice to check whether Descriptor can be serialized/deserialized by means of >> and << operators,
 	// but there seems to be no simple way to do it
@@ -55,9 +61,9 @@ public:
 
 	//void enroll(const std::string& datasetPath, const std::string& outputPath);
 
-	// TODO: add the abort method
+	// TODO: add the clear method
 
-	// TODO: add the save method
+	std::optional<std::string> find(const std::string& filePath, double tolerance) const;
 
 private:
 
@@ -94,14 +100,17 @@ private:
 
 	//void debugMsg(const std::string& msg);
 
+	// TODO: is it still needed?
 	struct DescriptorHasher
 	{
 		//std::size_t operator ()(typename DescriptorComputer::Descriptor const& descriptor) const noexcept;
 		std::size_t operator ()(Descriptor const& descriptor) const noexcept;
 	};
 
+	DescriptorMetric descriptorMetric;
 	//std::unordered_map<typename DescriptorComputer::Descriptor, std::size_t, DescriptorHasher> faceMap;
-	std::unordered_map<Descriptor, std::size_t, DescriptorHasher> faceMap;
+	//std::unordered_map<Descriptor, std::size_t, DescriptorHasher> faceMap;
+	std::unordered_map<Descriptor, std::size_t> faceMap;
 	std::vector<std::string> labels;
 };	// FaceDb
 
