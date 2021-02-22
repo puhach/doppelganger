@@ -16,7 +16,7 @@ std::optional<DlibFaceExtractor::Output> DlibFaceExtractor::operator() (const st
 	dlib::array2d<dlib::rgb_pixel> imDown;	// TODO: common?
 	//if (double scale = std::max(im.nr(), im.nc()) / 300.0; scale > 1)
 	bool downsampled = false;
-	if (std::max(im.nr(), im.nc()) > 300)
+	if (std::max(im.nr(), im.nc()) > 500)
 	{
 		pyrDown(im, imDown);
 		im.swap(imDown);
