@@ -12,8 +12,8 @@
 //#include "facedb.h"
 
 //FaceDb::FaceDb(const std::string& database, const std::string& landmarkDetectorPath)
-template <class DescriptorComputer>
-FaceDb<DescriptorComputer>::FaceDb(const std::string& database)
+template <class DescriptorComputer, class DescriptorMetric>
+FaceDb<DescriptorComputer, DescriptorMetric>::FaceDb(const std::string& database)
 {
 	/*dlib::deserialize(landmarkDetectorPath) >> this->landmarkDetector;
 	dlib::deserialize("dlib_face_recognition_resnet_model_v1.dat") >> this->netOrigin;*/
@@ -328,8 +328,8 @@ void FaceDb<DescriptorComputer>::create(const std::string& datasetPath)
 }	// create
 */
 
-template <class DescriptorComputer>
-void FaceDb<DescriptorComputer>::create(const std::string& datasetPath)
+template <class DescriptorComputer, class DescriptorMetric>
+void FaceDb<DescriptorComputer, DescriptorMetric>::create(const std::string& datasetPath)
 {
 	this->faceMap.clear();
 	this->labels.clear();
@@ -439,8 +439,8 @@ void FaceDb<DescriptorComputer>::create(const std::string& datasetPath)
 //}	// load
 
 
-template <class DescriptorComputer>
-void FaceDb<DescriptorComputer>::load(const std::string& databasePath)
+template <class DescriptorComputer, class DescriptorMetric>
+void FaceDb<DescriptorComputer, DescriptorMetric>::load(const std::string& databasePath)
 {
 	try
 	{
@@ -497,8 +497,8 @@ void FaceDb<DescriptorComputer>::load(const std::string& databasePath)
 //		throw std::runtime_error("Failed to save the database file: " + databasePath);
 //}	// save
 
-template <class DescriptorComputer>
-void FaceDb<DescriptorComputer>::save(const std::string& databasePath)
+template <class DescriptorComputer, class DescriptorMetric>
+void FaceDb<DescriptorComputer, DescriptorMetric>::save(const std::string& databasePath)
 {
 	try
 	{
@@ -527,8 +527,35 @@ void FaceDb<DescriptorComputer>::save(const std::string& databasePath)
 
 #endif	// !USE_PRODUCER_CONSUMER
 
-template<class DescriptorComputer>
-const DescriptorComputer& FaceDb<DescriptorComputer>::getDescriptorComputer()
+template <class DescriptorComputer, class DescriptorMetric>
+std::optional<std::string> FaceDb<DescriptorComputer, DescriptorMetric>::find(const std::string& imageFile, double tolerance) const
+{
+	DescriptorComputer descriptorComputer = getDescriptorComputer();	// we can't use the shared descriptor computer directly
+	std::optional<Descriptor> query = descriptorComputer(imageFile);
+	if (!query)
+		return std::nullopt;
+
+	//std::accumulate(this->faceMap.begin(), this->faceMap.end(), std::make_pair(0, std::numeric_limits<double>::infinity()), )
+	auto best = std::transform_reduce(std::execution::par, this->faceMap.begin(), this->faceMap.end(), 
+		std::make_pair(0, std::numeric_limits<double>::infinity()),
+		[](const std::pair<std::size_t, double>& x, const std::pair<std::size_t, double>& y)	// reduce
+		{
+			return x.second < y.second ? x : y;
+		},
+		[&query=*query](const std::pair<Descriptor, std::size_t>& p)	// TODO: thread safety, exceptions
+		{
+			return std::make_pair(p.second, DescriptorMetric{}(p.first, query));
+		});
+
+	//auto test = best.second < tolerance ? this->labels.at(best.first) : "";
+	if (best.second < tolerance)
+		return this->labels.at(best.first);
+	else
+		return std::nullopt;
+}	// find
+
+template <class DescriptorComputer, class DescriptorMetric>
+const DescriptorComputer& FaceDb<DescriptorComputer, DescriptorMetric>::getDescriptorComputer()
 {
 	// TODO: try shape_predictor_5_face_landmarks.dat
 	//static DescriptorComputer descriptorComputer("./shape_predictor_68_face_landmarks.dat", "./dlib_face_recognition_resnet_model_v1.dat");	
@@ -543,8 +570,8 @@ const DescriptorComputer& FaceDb<DescriptorComputer>::getDescriptorComputer()
 //	std::cout << std::this_thread::get_id() << " : " << msg << std::endl;
 //}
 
-template <class DescriptorComputer>
-std::size_t FaceDb<DescriptorComputer>::DescriptorHasher::operator()(typename DescriptorComputer::Descriptor const & descriptor) const noexcept
+template <class DescriptorComputer, class DescriptorMetric>
+std::size_t FaceDb<DescriptorComputer, DescriptorMetric>::DescriptorHasher::operator()(typename DescriptorComputer::Descriptor const & descriptor) const noexcept
 {
 	return std::hash<typename DescriptorComputer::Descriptor>{}(descriptor);
 	//std::hash<typename DescriptorComputer::Descriptor> h;

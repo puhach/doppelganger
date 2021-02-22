@@ -2,7 +2,8 @@
 //#include "dnnfacedescriptorcomputer.h"
 //#include "resnet.h"
 #include "resnetfacedescriptorcomputer.h"
-//#include "dlibmatrixhash.h"	// TEST!
+#include "resnetfacedescriptormetric.h"
+
 
 #include <iostream>
 #include <cassert>
@@ -95,13 +96,22 @@ int main(int argc, char* argv[])
 		auto elapsed2 = std::chrono::steady_clock::now() - now;
 		std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed2).count() << std::endl;*/
 
+		//FaceDb<ResNetFaceDescriptorComputer, ResNetFaceDescriptorComparator> faceDb(db, ResNetFaceDescriptorComparator(0.33));
+		//faceDb.setFaceDescriptorComparator(ResNetFaceDescriptorComparator(0.7));
+		// comparator may not necessarily be DnnFaceDescriptorComparator and be parametrized by DNN!
+		//FaceDb<ResNetFaceDescriptorComputer, DnnFaceDescriptorComparator<ResNet>> faceDb(db, 0.33); 
+		//FaceDb<ResNetFaceDescriptorComputer, FaceDescriptorComparator<ResNet::Output>> faceDb(db, 0.33);
+		//FaceDb<ResNetFaceDescriptorComputer, ResNetFaceDescriptorMetric> faceDb(db);
+		FaceDb<ResNetFaceDescriptorComputer, L2Distance<ResNetFaceDescriptorComputer::Descriptor>> faceDb;
 		//FaceDb faceDb(db, cache);
-		FaceDb<ResNetFaceDescriptorComputer> faceDb;
-		faceDb.create(db);
+		//faceDb.create(db);
 		//FaceDb<ResNetFaceDescriptorComputer> faceDb(db);	// TODO: do we need a default constructor?
 		//faceDb.find("some file", ResNetDescriptorComparator(0.7));
-		faceDb.save("z:/akla/my.db");
-		//faceDb.load("z:/my.db");
+		//faceDb.save("z:/akla/my.db");
+		faceDb.load("z:/my.db");
+		auto first = faceDb.find("./test/sofia-solares.jpg", 0.6);
+		auto second = faceDb.find("./test/shashikant-pedwal.jpg", 0.6);
+		std::cout << (first ? *first : "unknown") << " " << (second ? *second : "unknown") << std::endl;
 		//FaceDb<ResNetFaceDescriptorComputer> faceDb("z:/aalal/my.db");
 		//FaceDb<DnnFaceDescriptorComputer<ResNet>> faceDb(db);
 		//faceDb.find("some file", DnnDescriptorComparator<ResNet>(0.7));
