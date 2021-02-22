@@ -15,14 +15,8 @@
 
 namespace std
 {
-    //template<> struct hash<MyClass>
-    //{
-    //    std::size_t operator()(const MyClass& mat) const noexcept
-    //    {
-    //        return 0;
-    //    }
-    //};
-    
+
+    /*
     template<> struct hash<dlib::rgb_pixel>
     {
         std::size_t operator()(const dlib::rgb_pixel& rgb) const noexcept
@@ -31,14 +25,6 @@ namespace std
         }
     };
 
-    /*template<> struct hash<dlib::matrix<dlib::rgb_pixel>>
-    {
-        std::size_t operator()(const dlib::matrix<dlib::rgb_pixel>& mat) const noexcept
-        {
-            static std::hash<dlib::rgb_pixel> pixelHash;
-            return mat.begin() == mat.end() ? 0 : (static_cast<std::size_t>(mat.size())<<25) ^ (pixelHash(mat(0))<<1) ^ pixelHash(mat(mat.size()-1));
-        }
-    };*/
 
     template<typename T, long nrows, long ncols> struct hash<dlib::matrix<T, nrows, ncols>>
     {
@@ -50,15 +36,31 @@ namespace std
             return m.begin() == m.end() ? 0 : static_cast<std::size_t>(m.size()) ^ (h(m(0)) << 1) ^ h(m(m.size() - 1));
         }
     };
+    */
 
-    /*template<long nrows, long ncols> struct hash<dlib::matrix<float, nrows, ncols>>
+    template <typename T, long NR, long NC, typename MM, typename L>
+    struct hash<dlib::matrix<T, NR, NC, MM, L>>
     {
-        std::size_t operator()(const dlib::matrix<float, nrows, ncols>& m) const noexcept
+        /*
+        * The rules for extending namespace std says:
+        * 
+        * It is allowed to add template specializations for any standard library class template to the namespace std only if the declaration 
+        * depends on at least one program - defined type and the specialization satisfies all requirements for the original template, except 
+        * where such specializations are prohibited.
+        */                
+        std::size_t operator()(const dlib::matrix<T, NR, NC, MM, L>& m) const noexcept  // the original version is noexcept
         {
-            static std::hash<float> floatHash;
-            return m.begin() == m.end() ? 0 : static_cast<std::size_t>(m.size()) ^ (floatHash(m(0))<<1) ^ floatHash(m(m.size()-1));
+            try
+            {
+                return dlib::hash(m);   // dlib::hash is not declared noexcept
+            }
+            catch (...)
+            {
+                return 0;
+            }
         }
-    };*/
+    };  // hash<dlib::matrix>
+
 }  // std
 
 
