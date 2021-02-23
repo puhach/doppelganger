@@ -49,5 +49,5 @@ std::optional<DlibFaceExtractor::Output> DlibFaceExtractor::operator() (const st
 	//dlib::extract_image_chip(im, dlib::get_face_chip_details(landmarks, inputImageSize<ResNet>, 0.25), face);
 	dlib::extract_image_chip(im, dlib::get_face_chip_details(landmarks, this->size, this->padding), face);
 
-	return face;
+	return std::move(face);		// prefer move-constructor for std::optional
 }

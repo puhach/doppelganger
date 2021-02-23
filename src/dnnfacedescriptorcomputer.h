@@ -32,7 +32,7 @@ public:
 	std::optional<Descriptor> operator ()(Input&& input)
 	{
 		std::optional<typename FaceExtractor::Output> face = faceExtractor(std::forward<Input>(input));
-		return face ? network(*face) : std::nullopt;
+		return face ? network(*std::move(face)) : std::nullopt;
 	}
 
 private:
