@@ -11,9 +11,18 @@
 #include <optional>
 //#include "facedb.h"
 
+
+template <class DescriptorComputer, class DescriptorMetric>
+FaceDb<DescriptorComputer, DescriptorMetric>::FaceDb(Reporter&& reporter)
+	: reporter(std::move(reporter)) { }		// std::function's move contructor may throw until C++20
+
 //FaceDb::FaceDb(const std::string& database, const std::string& landmarkDetectorPath)
 template <class DescriptorComputer, class DescriptorMetric>
-FaceDb<DescriptorComputer, DescriptorMetric>::FaceDb(const std::string& database)
+FaceDb<DescriptorComputer, DescriptorMetric>::FaceDb(const std::string& database, Reporter&& reporter)
+	: reporter(std::move(reporter))
+//template <class Reporter>
+//FaceDb<DescriptorComputer, DescriptorMetric>::FaceDb(const std::string& database, Reporter&& reporter)
+//	: reporter(std::forward<Reporter>(reporter))
 {
 	/*dlib::deserialize(landmarkDetectorPath) >> this->landmarkDetector;
 	dlib::deserialize("dlib_face_recognition_resnet_model_v1.dat") >> this->netOrigin;*/
@@ -413,7 +422,7 @@ void FaceDb<DescriptorComputer, DescriptorMetric>::create(const std::string& dat
 template <class DescriptorComputer, class DescriptorMetric>
 void FaceDb<DescriptorComputer, DescriptorMetric>::create(const std::string& datasetPath)
 {
-	// TODO: add a verbosity option
+	this->reporter("Creating the database from " + datasetPath);
 
 	this->faceMap.clear();
 	this->labels.clear();
@@ -450,6 +459,10 @@ void FaceDb<DescriptorComputer, DescriptorMetric>::create(const std::string& dat
 	}	// for dirEntry
 
 	assert(fileEntries.size() == fileLabels.size());
+	
+	//reporter(std::string("Found ").append(std::to_string(fileEntries.size())).append(" in ").append(std::to_string(this->labels.size())).append(" directories."));
+	this->reporter("Processing " + std::to_string(fileEntries.size()) + " files in " + std::to_string(this->labels.size()) + " directories...");
+
 	std::exception_ptr eptr;	// a default-constructed std::exception_ptr is a null pointer; it does not point to an exception object
 	std::atomic<bool> eflag{ false };
 	std::vector<std::pair<std::optional<Descriptor>, std::size_t>> descriptors(fileEntries.size());
@@ -495,15 +508,7 @@ void FaceDb<DescriptorComputer, DescriptorMetric>::create(const std::string& dat
 			this->faceMap.emplace_back(*std::move(descriptor), label);	// constexpr T&& optional::operator*() &&
 	}
 
-	/*std::remove_if(descriptors.begin(), descriptors.end(), [](const auto& p) 
-		{
-			return !p.first;
-		});*/
-	/*for (std::size_t i = 0; i < descriptors.size(); ++i)
-	{
-		if (descriptors[i])
-			this->faceMap.emplace(*descriptors[i], fileLabels[i]);
-	}*/
+	this->reporter("The database has been created.");
 }	// create
 
 
@@ -543,6 +548,8 @@ void FaceDb<DescriptorComputer, DescriptorMetric>::load(const std::string& datab
 {
 	try
 	{
+		this->reporter("Loading the database from " + databasePath);
+
 		std::ifstream db(databasePath, std::ios::in);
 
 		// Set the mask of error states on occurrence of which the stream throws an exception of type failure
@@ -569,6 +576,8 @@ void FaceDb<DescriptorComputer, DescriptorMetric>::load(const std::string& datab
 			//this->faceMap.emplace(d, label);	// add the descriptor and the label to the map
 			this->faceMap.emplace_back(std::move(d), label);	// add the descriptor and the label to the map
 		}	// i
+
+		this->reporter("The database has been loaded.");
 	}	// try
 	catch (const std::ios_base::failure& e)
 	{
@@ -602,6 +611,8 @@ void FaceDb<DescriptorComputer, DescriptorMetric>::save(const std::string& datab
 {
 	try
 	{
+		this->reporter("Saving the database to " + databasePath);
+
 		std::ofstream db(databasePath, std::ios::out);
 		db.exceptions(std::ios_base::badbit | std::ios_base::failbit);
 
@@ -617,6 +628,8 @@ void FaceDb<DescriptorComputer, DescriptorMetric>::save(const std::string& datab
 		{
 			db << descriptor << std::endl << label << std::endl;
 		}
+
+		this->reporter("The database has been saved.");
 	} // try
 	catch (const std::ios_base::failure& e)
 	{

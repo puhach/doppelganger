@@ -102,9 +102,10 @@ int main(int argc, char* argv[])
 		//FaceDb<ResNetFaceDescriptorComputer, DnnFaceDescriptorComparator<ResNet>> faceDb(db, 0.33); 
 		//FaceDb<ResNetFaceDescriptorComputer, FaceDescriptorComparator<ResNet::Output>> faceDb(db, 0.33);
 		//FaceDb<ResNetFaceDescriptorComputer, ResNetFaceDescriptorMetric> faceDb(db);
-		FaceDb<ResNetFaceDescriptorComputer, L2Distance<ResNetFaceDescriptorComputer::Descriptor>> faceDb;
+		auto consoleReporter = [](const std::string& msg) {	std::cout << msg << std::endl; };
+		FaceDb<ResNetFaceDescriptorComputer, L2Distance<ResNetFaceDescriptorComputer::Descriptor>> faceDb{ std::move(consoleReporter) };
 		//FaceDb faceDb(db, cache);
-		//faceDb.create(db);
+		faceDb.create(db);
 		//FaceDb<ResNetFaceDescriptorComputer> faceDb(db);	// TODO: do we need a default constructor?
 		//faceDb.find("some file", ResNetDescriptorComparator(0.7));
 		//faceDb.save("z:/akla/my.db");
@@ -121,10 +122,30 @@ int main(int argc, char* argv[])
 		//disp.load(db);
 		//disp.save(cache);
 	}
+	catch (const dlib::cuda_error& e)
+	{
+		std::cerr << e.what() << std::endl << "Try disabling CUDA by setting DLIB_USE_CUDA=OFF and rebuild the project." << std::endl;
+		return -1;
+	}
+	catch (const std::bad_alloc& e)
+	{
+		std::cerr << e.what() << std::endl <<
+			"It looks like there is not enough memory for the program. Try the following options:"
+			"\n1) Close other software to save system resources and run again."
+			"\n2) Disable concurrency by configuring the project with PARALLEL_EXECUTION=OFF, then rebuild."
+			<< std::endl;
+		return -2;
+	}
 	catch (const std::exception& e)		// TODO: handle dlib exceptions
 	{
 		std::cerr << e.what() << std::endl;
-		return -1;
+		return -3;
 	}
+	catch (...)
+	{
+		std::cerr << "Unknown exception occurred" << std::endl;
+		return -4;
+	}
+
 	return 0;
 }
