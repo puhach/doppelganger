@@ -3,6 +3,8 @@
 
 #include <opencv2/core.hpp>
 
+#include <iostream>		// TEST!
+
 std::optional<OpenFace::OutputLabel> OpenFace::operator()(const cv::Mat& input, bool swapRB)
 {
 	CV_Assert(!input.empty());
@@ -11,6 +13,9 @@ std::optional<OpenFace::OutputLabel> OpenFace::operator()(const cv::Mat& input, 
 	double scaleFactor = input.type() == CV_32FC3 ? 1.0 : 1 / 255.0;
 	auto blob = cv::dnn::blobFromImage(input, scaleFactor, cv::Size(96, 96), cv::Scalar(0, 0, 0), swapRB, false, CV_32F);
 	net.setInput(blob);
+	/*auto result = net.forward();
+	auto tmp = result.reshape(1);
+	return tmp;*/
 	return net.forward();
 }
 
@@ -24,17 +29,19 @@ double operator - (const OpenFace::Descriptor& d1, const OpenFace::Descriptor& d
 std::istream& operator >> (std::istream& stream, OpenFace::Descriptor& descriptor)
 {
 	int type = -1;
-	int rows = 0;
-	stream >> type >> rows;
+	int cols = 0;
+	stream >> type >> cols;
 
-	CV_Assert(type == CV_32FC1 && rows > 0);
-	cv::Mat mat(rows, 1, type);
+	CV_Assert(type == CV_32FC1 && cols > 0);
+	cv::Mat mat(1, cols, type);
 
-	for (int i = 0; i < rows; ++i)
+	for (int i = 0; i < cols; ++i)
 	{
-		auto &elem = mat.at<double>(i);
+		auto &elem = mat.at<float>(0, i);
 		stream >> elem;
 	}
+
+	descriptor.data = std::move(mat);
 
 	return stream;
 }
@@ -45,14 +52,15 @@ std::ostream& operator << (std::ostream& stream, const OpenFace::Descriptor& des
 	const cv::Mat& m = descriptor.data;
 	
 	CV_Assert(!m.empty());
-	CV_Assert(m.dims == 2 && m.cols == 1);
+	CV_Assert(m.dims == 2 && m.rows == 1);
 	CV_Assert(m.type() == CV_32FC1);
 
-	stream << m.type() << " " << m.rows << std::endl;
+	stream << m.type() << " " << m.cols << std::endl;
 
-	for (int i = 0; i < m.rows; ++i)
+	for (int i = 0; i < m.cols; ++i)
 	{
-		stream << m.at<double>(i) << std::endl;
+		//stream << m.at<double>(i) << std::endl;
+		stream << m.at<float>(0, i) << std::endl;
 	}
 
 	stream << std::endl;
