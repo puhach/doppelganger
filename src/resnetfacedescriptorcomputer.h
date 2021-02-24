@@ -18,7 +18,7 @@
 * would lead to performance overhead.
 */
 
-class ResNetFaceDescriptorComputer : DnnFaceDescriptorComputer<ResNet, DlibFaceExtractor>	
+class ResNetFaceDescriptorComputer : DnnFaceDescriptorComputer<ResNet, DlibFaceExtractor>	// TODO: make it final?
 {
     // TODO: try 5-landmark detector
 	static inline const std::string faceRecognitionModel{ "./dlib_face_recognition_resnet_model_v1.dat" };

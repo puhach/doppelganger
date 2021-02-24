@@ -3,7 +3,8 @@
 //#include "resnet.h"
 #include "resnetfacedescriptorcomputer.h"
 #include "resnetfacedescriptormetric.h"
-
+#include "openfacedescriptorcomputer.h"
+#include "openfacedescriptormetric.h"
 
 #include <iostream>
 #include <cassert>
@@ -86,25 +87,9 @@ int main(int argc, char* argv[])
 		std::string db = "./dataset";
 		std::string cache = "./descriptors.csv";
 
-		/*auto now = std::chrono::steady_clock::now();
-		DnnFaceDescriptorComputer<ResNet> one("./shape_predictor_68_face_landmarks.dat", "./dlib_face_recognition_resnet_model_v1.dat");
-		auto elapsed1 = std::chrono::steady_clock::now() - now;
-		std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed1).count() << std::endl;
-		int tmp = 33;
-		now = std::chrono::steady_clock::now();
-		DnnFaceDescriptorComputer<ResNet> two = one;
-		auto elapsed2 = std::chrono::steady_clock::now() - now;
-		std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed2).count() << std::endl;*/
-
-		//FaceDb<ResNetFaceDescriptorComputer, ResNetFaceDescriptorComparator> faceDb(db, ResNetFaceDescriptorComparator(0.33));
-		//faceDb.setFaceDescriptorComparator(ResNetFaceDescriptorComparator(0.7));
-		// comparator may not necessarily be DnnFaceDescriptorComparator and be parametrized by DNN!
-		//FaceDb<ResNetFaceDescriptorComputer, DnnFaceDescriptorComparator<ResNet>> faceDb(db, 0.33); 
-		//FaceDb<ResNetFaceDescriptorComputer, FaceDescriptorComparator<ResNet::Output>> faceDb(db, 0.33);
-		//FaceDb<ResNetFaceDescriptorComputer, ResNetFaceDescriptorMetric> faceDb(db);
 		auto consoleReporter = [](const std::string& msg) {	std::cout << msg << std::endl; };
-		FaceDb<ResNetFaceDescriptorComputer, L2Distance<ResNetFaceDescriptorComputer::Descriptor>> faceDb{ std::move(consoleReporter) };
-		//FaceDb faceDb(db, cache);
+		//FaceDb<ResNetFaceDescriptorComputer, L2Distance<ResNetFaceDescriptorComputer::Descriptor>> faceDb{ std::move(consoleReporter) };
+		FaceDb<OpenFaceDescriptorComputer, L2Distance<OpenFaceDescriptorComputer::Descriptor>> faceDb{ std::move(consoleReporter) };
 		faceDb.create(db);
 		//FaceDb<ResNetFaceDescriptorComputer> faceDb(db);	// TODO: do we need a default constructor?
 		//faceDb.find("some file", ResNetDescriptorComparator(0.7));
@@ -113,14 +98,6 @@ int main(int argc, char* argv[])
 		auto first = faceDb.find("./test/sofia-solares.jpg", 0.6);
 		auto second = faceDb.find("./test/shashikant-pedwal.jpg", 0.6);
 		std::cout << (first ? *first : "unknown") << " " << (second ? *second : "unknown") << std::endl;
-		//FaceDb<ResNetFaceDescriptorComputer> faceDb("z:/aalal/my.db");
-		//FaceDb<DnnFaceDescriptorComputer<ResNet>> faceDb(db);
-		//faceDb.find("some file", DnnDescriptorComparator<ResNet>(0.7));
-		//faceDb.find(query);
-		//FaceDb disp;
-		////disp.enroll("./dataset", "./descriptors.csv");
-		//disp.load(db);
-		//disp.save(cache);
 	}
 	catch (const dlib::cuda_error& e)
 	{

@@ -5,20 +5,21 @@
 #include <string>
 
 
-
+// TODO: perhaps, it would be meaningful to rename it to GenericFaceDescriptorComputer<Algorithm, FaceExtractor>
 
 template <class NetworkType, class FaceExtractorType>
 class DnnFaceDescriptorComputer
 {
-	static_assert(std::is_convertible_v<typename FaceExtractorType::Output, typename NetworkType::Input>, "FaceExtractor output type must be compatible with Network input type.");
+	// TODO: check whether the network is callable rather 
+	//static_assert(std::is_convertible_v<typename FaceExtractorType::Output, typename NetworkType::Input>, "FaceExtractor output type must be compatible with Network input type.");
 public:
 	using Network = NetworkType;
 	using FaceExtractor = FaceExtractorType;
 	using Descriptor = typename Network::OutputLabel;
 
 	template <class NetworkT, class FaceExtractorT>
-	DnnFaceDescriptorComputer(NetworkT&& network, FaceExtractorT&& faceExtractor) noexcept(
-		std::is_nothrow_constructible_v<Network, NetworkT>&& std::is_nothrow_constructible_v<FaceExtractor, FaceExtractorT>)
+	DnnFaceDescriptorComputer(NetworkT&& network, FaceExtractorT&& faceExtractor) noexcept(std::is_nothrow_constructible_v<Network, NetworkT>
+																					&& std::is_nothrow_constructible_v<FaceExtractor, FaceExtractorT>)
 		: network(std::forward<NetworkT>(network))
 		, faceExtractor(std::forward<FaceExtractorT>(faceExtractor))
 	{

@@ -9,7 +9,7 @@
 
 #include <dlib/opencv.h>
 
-#include <opencv2/highgui.hpp>	// TEST!
+//#include <opencv2/highgui.hpp>	// TEST!
 
 
 class OpenFaceDescriptorComputer //: DnnFaceDescriptorComputer<OpenFace, DlibFaceExtractor>
