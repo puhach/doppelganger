@@ -467,30 +467,33 @@ void FaceDb<DescriptorComputer, DescriptorMetric>::create(const std::string& dat
 	std::atomic<bool> eflag{ false };
 	std::vector<std::pair<std::optional<Descriptor>, std::size_t>> descriptors(fileEntries.size());
 	std::transform(std::execution::par, fileEntries.begin(), fileEntries.end(), fileLabels.begin(), descriptors.begin(),
+	//std::transform(std::execution::seq, fileEntries.begin(), fileEntries.end(), fileLabels.begin(), descriptors.begin(),	// TEST!
 		[this, &eptr, &eflag](const auto& filePath, auto label) -> std::pair<std::optional<Descriptor>, std::size_t>
 		{
-			try
+			if (!eflag.load(std::memory_order_acquire))
 			{
-				// For performance reasons descriptor computer is not configurable: it will be default-constructed for all instances
-				// of FaceDb template specialized with the same descriptor computer type and copied for each thread only once.
-				// We could with some effort update thread_local variables by copying the modifiable instance of the original 
-				// descriptor computer, but it still would be rather slow. 
-				thread_local DescriptorComputer descriptorComputer = getDescriptorComputer();
-				return std::make_pair( descriptorComputer(filePath.string()), label );
-			}	// try
-			catch (...)
-			{
-				//std::scoped_lock lck(emtx);
+				try
+				{
+					// For performance reasons descriptor computer is not configurable: it will be default-constructed for all instances
+					// of FaceDb template specialized with the same descriptor computer type and copied for each thread only once.
+					// We could with some effort update thread_local variables by copying the modifiable instance of the original 
+					// descriptor computer, but it still would be rather slow. 
+					thread_local DescriptorComputer descriptorComputer = getDescriptorComputer();
+					return std::make_pair(descriptorComputer(filePath.string()), label);
+				}	// try
+				catch (...)
+				{
+					// Atomically set the eflag to true and check whether it was not set before to avoid a race.  
+					// A read-modify-write operation with memory_order_acq_rel memory order is both an acquire operation and a release  
+					// operation. No memory reads or writes in the current thread can be reordered before or after this store. All writes
+					// in other threads that release the same atomic variable are visible before the modification and the modification 
+					// is visible in other threads that acquire the same atomic variable.
+					if (!eflag.exchange(true, std::memory_order_acq_rel))	// noexcept
+						eptr = std::current_exception();
+				}	// catch
+			}	// !eflag
 
-				// A read-modify-write operation with this memory order is both an acquire operation and a release operation. 
-				// No memory reads or writes in the current thread can be reordered before or after this store. All writes in 
-				// other threads that release the same atomic variable are visible before the modification and the modification 
-				// is visible in other threads that acquire the same atomic variable.
-				if (!eflag.exchange(true, std::memory_order_acq_rel))	// noexcept
-					eptr = std::current_exception();
-				//return std::nullopt;
-				return std::make_pair(std::nullopt, label);
-			}
+			return std::make_pair(std::nullopt, label);
 		});	// transform
 
 
@@ -648,17 +651,35 @@ std::optional<std::string> FaceDb<DescriptorComputer, DescriptorMetric>::find(co
 	if (!query)
 		return std::nullopt;
 
+	std::exception_ptr eptr;	// a default-constructed std::exception_ptr is a null pointer; it does not point to an exception object
+	std::atomic<bool> eflag{ false };	// exception occurrence flag
 	//std::accumulate(this->faceMap.begin(), this->faceMap.end(), std::make_pair(0, std::numeric_limits<double>::infinity()), )
 	auto best = std::transform_reduce(std::execution::par, this->faceMap.begin(), this->faceMap.end(), 
 		std::make_pair(0, std::numeric_limits<double>::infinity()),
-		[](const std::pair<std::size_t, double>& x, const std::pair<std::size_t, double>& y)	// reduce
+		[](const std::pair<std::size_t, double>& x, const std::pair<std::size_t, double>& y) noexcept	// reduce
 		{
 			return x.second < y.second ? x : y;
 		},
-		[&query=*query](const std::pair<Descriptor, std::size_t>& p)	// TODO: thread safety, exceptions
+		[&query=*query, &eptr, &eflag](const std::pair<Descriptor, std::size_t>& p)	// transform
 		{
-			return std::make_pair(p.second, DescriptorMetric{}(p.first, query));
-		});
+			try
+			{
+				return std::make_pair(p.second, DescriptorMetric{}(p.first, query));	// may throw an exception
+			}
+			catch (...)
+			{
+				// Atomically check whether the exception flag has already been set and take care of memory consistency
+				if (!eflag.exchange(true, std::memory_order_acq_rel))
+					eptr = std::current_exception();
+
+				// std::pair does not throw exceptions unless one of the specified operations (e.g. constructor of an element) throws;
+				// std::numeric_limits<double>::infinity() is noexcept.
+				return std::make_pair(p.second, std::numeric_limits<double>::infinity());
+			}
+		});	// transform_reduce
+
+	if (eptr)
+		std::rethrow_exception(eptr);
 
 	//auto test = best.second < tolerance ? this->labels.at(best.first) : "";
 	if (best.second < tolerance)
