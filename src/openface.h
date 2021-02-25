@@ -49,6 +49,19 @@ public:
 
 		// TODO: define copy/move semantics
 
+		Descriptor(const Descriptor& other)
+			: data(other.data.clone()) { }
+
+		Descriptor(Descriptor&& other) = default;
+
+		Descriptor& operator = (const Descriptor& other)
+		{
+			other.data.copyTo(this->data);
+			return *this;
+		}
+		
+		Descriptor& operator = (Descriptor&& other) = default;
+
 	private:
 		//OpenFace::OutputLabel label;
 		DataType data;
