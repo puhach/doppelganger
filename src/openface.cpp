@@ -3,7 +3,10 @@
 
 #include <opencv2/core.hpp>
 
-#include <iostream>		// TEST!
+// TEST!
+#include <iostream>		
+#include <opencv2/highgui.hpp>
+
 
 std::optional<OpenFace::OutputLabel> OpenFace::operator()(const cv::Mat& input, bool swapRB)
 {
@@ -12,11 +15,8 @@ std::optional<OpenFace::OutputLabel> OpenFace::operator()(const cv::Mat& input, 
 
 	double scaleFactor = input.type() == CV_32FC3 ? 1.0 : 1 / 255.0;
 	auto blob = cv::dnn::blobFromImage(input, scaleFactor, cv::Size(96, 96), cv::Scalar(0, 0, 0), swapRB, false, CV_32F);
-	net.setInput(blob);
-	/*auto result = net.forward();
-	auto tmp = result.reshape(1);
-	return tmp;*/
-	return net.forward();
+	net.setInput(blob);	
+	return net.forward().clone();	// it seems like a non-owning Mat is returned
 }
 
 
