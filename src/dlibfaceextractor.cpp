@@ -10,18 +10,19 @@ std::optional<DlibFaceExtractor::Output> DlibFaceExtractor::operator() (const st
 	dlib::array2d<dlib::rgb_pixel> im;	// TODO: array or matrix
 	dlib::load_image(im, filePath);
 
-	// Detect the face
 	// TODO: downsample the image
 	static const dlib::pyramid_down<2> pyrDown;		// TODO: common
 	dlib::array2d<dlib::rgb_pixel> imDown;	// TODO: common?
 	//if (double scale = std::max(im.nr(), im.nc()) / 300.0; scale > 1)
 	bool downsampled = false;
-	if (std::max(im.nr(), im.nc()) > 500)
+	if (std::max(im.nr(), im.nc()) > 1500)
 	{
 		pyrDown(im, imDown);
 		im.swap(imDown);
 		downsampled = true;
 	}
+
+	// Detect the face
 
 	//thread_local dlib::frontal_face_detector faceDetector = faceDetectorOrigin;		// copying is faster calling get_frontal_face_detector() every time
 	auto faces = this->faceDetector(im);
