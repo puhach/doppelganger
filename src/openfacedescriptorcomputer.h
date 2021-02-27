@@ -101,7 +101,7 @@ public:
 		{
 			//cv::imshow("test", *face);
 			//cv::waitKey(5000);
-			return this->faceRecognizer(*face, true);
+			return this->faceRecognizer(*face, false);
 		}
 
 		return std::nullopt;
