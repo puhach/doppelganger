@@ -8,6 +8,12 @@
 //#include "dlibfaceextractor.h"
 #include "openfaceextractor.h"
 
+#include <vector>
+#include <optional>
+#include <execution>
+#include <atomic>
+#include <exception>
+
 #include <dlib/opencv.h>
 
 // TEST!
@@ -44,85 +50,299 @@ public:
 
 	OpenFaceDescriptorComputer()
 		: faceRecognizer(faceRecognitionModel)
-		//, faceExtractor(landmarkDetectionModel, 96, 0.2)	// TODO: what's the size?
-		, faceExtractor(landmarkDetectionModel)	// TODO: what's the size?
-	{
-
-	}
+	{	}
 
 	// TODO: define copy/move semantics
 
-	template <typename Input>
-	std::optional<Descriptor> operator ()(Input&& input)
+	//template <typename Input>
+	//std::optional<Descriptor> operator ()(Input&& input)
+	std::optional<Descriptor> operator ()(const std::string& file)
 	{
-		/*
-		// TEST!
-		dlib::frontal_face_detector faceDetector = dlib::get_frontal_face_detector();
-		dlib::shape_predictor landmarkDetector;
-		dlib::deserialize("./shape_predictor_5_face_landmarks.dat") >> landmarkDetector;
-		
-		dlib::array2d<dlib::rgb_pixel> imDlib;
-		std::string imagePath = input;
-		dlib::load_image(imDlib, imagePath);
-
-		std::vector<dlib::rectangle> faceRects = faceDetector(imDlib);
-
-		auto r = faceRects[0];
-		dlib::full_object_detection landmarks = landmarkDetector(imDlib, r);
-		assert(landmarks.num_parts() > 0);
-
-		dlib::matrix<dlib::rgb_pixel> faceChip;
-		dlib::extract_image_chip(imDlib, dlib::get_face_chip_details(landmarks, 96, 0.2), faceChip);
-
-		//dlib::image_window testwin(faceChip, "dlibtest");
-		//testwin.wait_until_closed();
-
-		const cv::Mat& tmp = dlib::toMat(faceChip);
-		cv::Mat aligned;
-		tmp.copyTo(aligned);
-
-		return this->faceRecognizer(aligned, false);
-		*/
-
-		//// TEST!
-		//if (std::optional<DlibFaceExtractor::Output> face = faceExtractor(std::forward<Input>(input)); face)
-		//{			
-		//	//const cv::Mat& faceMat = dlib::toMat(*face);	// const reference prolongs life of a temporary
-		//	const cv::Mat& faceMat = dlib::toMat(*face);	// const reference prolongs life of a temporary
-		//	//cv::imshow("test", faceMat);
-		//	//cv::waitKey();
-		//	cv::Mat tmp;
-		//	faceMat.copyTo(tmp);
-		//	return this->faceRecognizer(tmp, false);		// caffe models normally use BGR order
-		//}
-		
-
-		if (std::optional<OpenFaceExtractor::Output> face = faceExtractor(std::forward<Input>(input), 96); face)
-		{
-			//cv::imshow("test", *face);
-			//cv::waitKey(5000);
-			return this->faceRecognizer(*face, false);
-		}
-
-		return std::nullopt;
-		
-
-		// TODO: final code:
-		//std::optional<DlibFaceExtractor::Output> face = faceExtractor(std::forward<Input>(input));
-		//return face ? this->faceRecognizer(dlib::toMat(*face), true) : std::nullopt;
+		OpenFaceExtractor faceExtractor = getFaceExtractor();
+		std::optional<OpenFaceExtractor::Output> face = faceExtractor(file, OpenFace::inputImageSize);
+		return face ? this->faceRecognizer(*face, false) : std::nullopt;
 	}
+
+	
+
+	//// testing operator()(std::string)
+	//std::vector<std::optional<Descriptor>> operator()(const std::vector<std::string>& files, std::size_t maxBatchSize = 64)
+	//{
+	//	std::vector<std::optional<Descriptor>> descriptors;
+	//	for (const auto& file : files)
+	//	{
+	//		descriptors.push_back((*this)(file));
+	//	}
+	//	return descriptors;
+	//}
+
+	
+	std::vector<std::optional<Descriptor>> operator()(const std::vector<std::string>& files, std::size_t maxBatchSize = 64)
+	{
+		std::vector<std::optional<Descriptor>> descriptors(files.size());
+		auto tail = (*this)(files.cbegin(), files.cend(), descriptors.begin(), maxBatchSize);	
+		assert(descriptors.end() == tail);
+		return descriptors;
+	}
+		
+	
+	template <class InputIterator, class OutputIterator>
+	OutputIterator operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead, std::size_t maxBatchSize = 64);
+		
 
 	//using Network = OpenFace;
 	//using DnnFaceDescriptorComputer::FaceExtractor;
 
 private:
+
+	const OpenFaceExtractor& getFaceExtractor()
+	{
+		static OpenFaceExtractor faceExtractor{ landmarkDetectionModel };
+		return faceExtractor;
+	}
+
 	OpenFace faceRecognizer;
 	//DlibFaceExtractor faceExtractor;
-	OpenFaceExtractor faceExtractor;
+	//OpenFaceExtractor faceExtractor;
 };	// OpenFaceDescriptorComputer
 
 
+// TODO: move it to _impl.h file
 
+template <class InputIterator, class OutputIterator>
+OutputIterator OpenFaceDescriptorComputer::operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead, std::size_t maxBatchSize)
+{
+	assert(maxBatchSize > 0);
+	assert(inTail >= inHead);
+
+	//std::size_t total = inTail - inHead, completed = 0;
+	std::atomic_flag eflag{ false };
+	std::exception_ptr eptr;
+	std::vector<std::optional<OpenFaceExtractor::Output>> faces(maxBatchSize);
+	//std::vector<std::optional<Descriptor>> descriptors(inputs.size());
+	std::vector<cv::Mat> inBatch(maxBatchSize), outBatch(maxBatchSize);
+	std::vector<std::size_t> pos(maxBatchSize);	// idices of corresponding items: faces -> batchIn/batchOut
+
+	//for (InputIterator batchTail; completed < total; inHead = inTail)
+	for (InputIterator batchTail; inHead < inTail; inHead = batchTail)
+	{
+		//auto batchSize = std::min(total - completed, maxBatchSize);
+		auto batchSize = std::min(maxBatchSize, static_cast<std::size_t>(inTail - inHead));
+		//n -= batchSize;
+		//inTail = inHead + batchSize;
+		batchTail = inHead + batchSize;
+
+		faces.resize(batchSize);
+		//std::transform(std::execution::par, inHead, inTail, faces.begin(),
+		std::transform(std::execution::par, inHead, batchTail, faces.begin(),
+			[this, &eptr, &eflag](const auto& file) -> std::optional<OpenFaceExtractor::Output>
+			{
+				try
+				{
+					thread_local auto localExtractor = getFaceExtractor();
+					return localExtractor(file, OpenFace::inputImageSize);	
+				}
+				catch (...)
+				{
+					if (!eflag.test_and_set(std::memory_order_acq_rel))
+						eptr = std::current_exception();
+				}
+
+				return std::nullopt;
+			});	// transform
+
+		if (eptr)
+			std::rethrow_exception(eptr);
+
+
+		assert(faces.size() == batchSize);
+		inBatch.clear();
+		pos.clear();
+		for (std::size_t i = 0, j = 0; i < faces.size(); ++i)
+		{
+			pos.push_back(j);	// indices of non-null faces/descriptors in batchIn/batchOut
+
+			if (faces[i])
+			{
+				inBatch.push_back(*faces[i]);
+				++j;
+			}
+			//else std::cout << "empty face: " << *(inHead+) << std::endl;
+			//else std::cout << "empty face: " << std::endl;
+		}	// for i
+
+
+		//std::vector<cv::Mat> batchOut(batchIn.size());
+		outBatch.resize(inBatch.size());
+		auto outBatchTail = this->faceRecognizer(inBatch.cbegin(), inBatch.cend(), outBatch.begin(), false);
+		assert(outBatchTail == outBatch.end());
+
+		outHead = std::transform(faces.cbegin(), faces.cend(), pos.cbegin(), outHead,
+			[&outBatch](const std::optional<OpenFaceExtractor::Output>& face, std::size_t idx) -> std::optional<Descriptor>
+			{
+				assert(idx < outBatch.size());
+				return face ? outBatch[idx] : std::optional<Descriptor>(std::nullopt);
+			});
+
+	}	// while
+
+	//assert(completed == total);
+	assert(inHead == inTail);
+	//return descriptors;
+	return outHead;
+}	// operator ()
+
+
+
+/*
+std::vector<std::optional<Descriptor>> operator()(const std::vector<std::string>& inputs, std::size_t maxBatchSize = 2)	// TEST! batch size
+{
+	assert(maxBatchSize > 0);
+
+	std::size_t total = inputs.size(), completed = 0;
+	std::atomic_flag eflag{ false };
+	std::exception_ptr eptr;
+	std::vector<std::optional<OpenFaceExtractor::Output>> faces(maxBatchSize);
+	std::vector<std::optional<Descriptor>> descriptors(inputs.size());
+
+	for (auto head = inputs.cbegin(), tail = head; completed < total; head = tail)
+	{
+		auto batchSize = std::min(total - completed, maxBatchSize);
+		//n -= batchSize;
+		tail = head + batchSize;
+
+		faces.resize(batchSize);
+		//std::transform(std::execution::par, inputs.cbegin(), inputs.cend(), faces.begin(),
+		std::transform(std::execution::par, head, tail, faces.begin(),
+			[this, &eptr, &eflag](const std::string& file) -> std::optional<OpenFaceExtractor::Output>
+			{
+				try
+				{
+					thread_local auto localExtractor = this->faceExtractor;
+					return localExtractor(file, 96);	// TODO: image size constant
+				}
+				catch (...)
+				{
+					if (!eflag.test_and_set(std::memory_order_acq_rel))
+						eptr = std::current_exception();
+				}
+
+				return std::nullopt;
+			});	// transform
+
+		if (eptr)
+			std::rethrow_exception(eptr);
+
+
+		std::vector<cv::Mat> batchIn;
+		std::vector<std::size_t> pos;	// idices of corresponding non-null faces/descriptors in batchIn/batchOut
+		//for (auto& imOpt : inputs)
+		for (std::size_t i = 0, j = 0; i < faces.size(); ++i)
+		{
+			pos.push_back(j);
+
+			if (auto imOpt = faces[i]; imOpt)
+			{
+				batchIn.push_back(*imOpt);
+				++j;
+			}
+			else std::cout << "empty face: " << inputs[i] << std::endl;
+		}	// for i
+
+		assert(faces.size() == batchSize);
+		descriptors.resize(completed + batchSize, std::nullopt);
+		if (!batchIn.empty())
+		{
+			auto batchOut = this->faceRecognizer(batchIn, false);
+			assert(batchOut.size() == batchIn.size());
+
+			for (std::size_t i = 0; i < faces.size(); ++i)
+			{
+				if (faces[i])
+					descriptors[completed + i] = std::move(batchOut[pos[i]]);
+					//descriptors.at(completed + i) = std::move(batchOut.at(pos.at(i)));
+			}	// for
+		}	// not an empty batch
+
+		completed += batchSize;
+	}	// while
+
+	assert(completed == total);
+	return descriptors;
+}
+*/
+
+/*
+std::vector<std::optional<Descriptor>> operator()(const std::vector<std::string>& inputs, std::size_t maxBatchSize = 100)
+{
+	assert(maxBatchSize > 0);
+
+	std::size_t total = inputs.size(), completed = 0;
+	std::atomic_flag eflag{ false };
+	std::exception_ptr eptr;
+	std::vector<std::optional<OpenFaceExtractor::Output>> faces(maxBatchSize);
+	std::vector<std::optional<Descriptor>> descriptors(inputs.size());
+
+	for (auto head = inputs.cbegin(), tail = head; completed < total; head = tail)
+	{
+		auto batchSize = std::min(total - completed, maxBatchSize);
+		//n -= batchSize;
+		tail = head + batchSize;
+
+		faces.resize(batchSize);
+		//std::transform(std::execution::par, inputs.cbegin(), inputs.cend(), faces.begin(),
+		std::transform(std::execution::par, head, tail, faces.begin(),
+			[this, &eptr, &eflag](const std::string& file) -> std::optional<OpenFaceExtractor::Output>
+			{
+				try
+				{
+					thread_local auto localExtractor = this->faceExtractor;
+					return localExtractor(file, 96);	// TODO: image size constant
+				}
+				catch (...)
+				{
+					if (!eflag.test_and_set(std::memory_order_acq_rel))
+						eptr = std::current_exception();
+				}
+
+				return std::nullopt;
+			});	// transform
+
+		if (eptr)
+			std::rethrow_exception(eptr);
+
+
+		assert(faces.size() == batchSize);
+		descriptors.resize(completed + batchSize, std::nullopt);
+		//std::vector<cv::Mat> batchIn;
+		//std::vector<std::size_t> pos;	// idices of corresponding non-null faces/descriptors in batchIn/batchOut
+		//for (auto& imOpt : inputs)
+		for (std::size_t i = 0, j = 0; i < faces.size(); ++i)
+		{
+			//pos.push_back(j);
+
+			if (auto imOpt = faces[i]; imOpt)
+			{
+				descriptors[completed + i] = this->faceRecognizer(*imOpt, false);
+				//batchIn.push_back(*imOpt);
+				++j;
+			}
+			else
+			{
+				descriptors[completed + i] = std::nullopt;
+				std::cout << "empty face: " << inputs[i] << std::endl;
+			}
+		}	// for i
+
+
+
+		completed += batchSize;
+	}	// while
+
+	assert(completed == total);
+	return descriptors;
+}
+*/
 
 
 #endif	// OPENFACEDESCRIPTORCOMPUTER_H

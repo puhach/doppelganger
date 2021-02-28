@@ -13,12 +13,62 @@ std::optional<OpenFace::OutputLabel> OpenFace::operator()(const cv::Mat& input, 
 	CV_Assert(!input.empty());
 	CV_Assert(input.type() == CV_32FC3 || input.type() == CV_8UC3);
 
+	// TODO: define input size member constant / type trait
 	double scaleFactor = input.type() == CV_32FC3 ? 1.0 : 1 / 255.0;
 	auto blob = cv::dnn::blobFromImage(input, scaleFactor, cv::Size(96, 96), cv::Scalar(0, 0, 0), swapRB, false, CV_32F);
 	net.setInput(blob);	
 	return net.forward().clone();	// it seems like a non-owning Mat is returned
 }
 
+//std::vector<std::optional<OpenFace::OutputLabel>> OpenFace::operator()(const std::vector<std::optional<cv::Mat>>& inputs, bool swapRB)
+std::vector<OpenFace::OutputLabel> OpenFace::operator()(const std::vector<cv::Mat>& inputs, bool swapRB)
+{
+	//std::vector<cv::Mat> images;
+	//std::vector<std::size_t> pos;
+	////for (auto& imOpt : inputs)
+	//for (std::size_t i = 0, j = 0; i < inputs.size(); ++i)
+	//{
+	//	pos.push_back(j);
+
+	//	auto imOpt = inputs[i];
+
+	//	if (imOpt)
+	//	{
+	//		images.push_back(*imOpt);			
+	//		++j;
+	//	}		
+	//}
+
+	// TODO: scale factor must be consistent with a single argument version
+	auto inBlob = cv::dnn::blobFromImages(inputs, 1 / 255.0, cv::Size(96, 96), cv::Scalar(0, 0, 0), swapRB, false, CV_32F);
+	net.setInput(inBlob);
+	//std::vector<cv::Mat> outputBlobs;
+	//net.forward(outputBlobs);
+	auto outBlob = net.forward();
+
+	std::cout << "Output blob size: " << outBlob.rows << std::endl;
+
+	//std::vector<std::optional<OpenFace::OutputLabel>> outputs{ inputs.size(), std::nullopt };
+	//if (outBlob.rows == inputs.size())
+	//{
+	//	for (int i = 0; i < outBlob.rows; ++i)
+	//	{
+	//		//if (i == pos[i])
+	//		if (inputs[i])
+	//			outputs[i] = outBlob.row(pos.at(i)).clone();
+	//		else
+	//			outputs[i] = std::nullopt;
+	//	}
+	//}
+	
+	std::vector<OpenFace::OutputLabel> outputs{ inputs.size()};
+	for (int i = 0; i < outBlob.rows; ++i)
+	{
+		outputs[i] = outBlob.row(i).clone(); // TODO: batch version seems to work without clone()
+	}
+
+	return outputs;
+}
 
 double operator - (const OpenFace::Descriptor& d1, const OpenFace::Descriptor& d2)
 {

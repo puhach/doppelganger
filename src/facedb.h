@@ -118,6 +118,7 @@ private:
 	//	std::size_t operator ()(Descriptor const& descriptor) const noexcept;
 	//};
 
+	DescriptorComputer descriptorComputer;
 	//DescriptorMetric descriptorMetric;
 	Reporter reporter;
 	//std::unordered_map<Descriptor, std::size_t> faceMap;

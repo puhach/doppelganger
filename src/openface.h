@@ -69,6 +69,7 @@ public:
 
 	using OutputLabel = Descriptor;		// TODO: rename OutputLabel
 
+	static constexpr unsigned long inputImageSize = 96;
 
 	OpenFace(const std::string& modelPath) 
 		: modelPath(modelPath)
@@ -93,10 +94,47 @@ public:
 	
 	std::optional<OutputLabel> operator()(const cv::Mat& input, bool swapRB);
 
+	//std::vector<std::optional<OutputLabel>> operator()(const std::vector<std::optional<cv::Mat>>& inputs, bool swapRB);
+	std::vector<OutputLabel> operator()(const std::vector<cv::Mat>& inputs, bool swapRB);
+
+	template <class InputIterator, class OutputIterator>
+	OutputIterator operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead, bool swapRB);	
 
 private:
 	cv::String modelPath;
 	cv::dnn::Net net;
 };	// OpenFace
+
+// TODO: perhaps, move it to _impl.h file?
+
+template <class InputIterator, class OutputIterator>
+OutputIterator OpenFace::operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead, bool swapRB)
+{
+	if (inHead == inTail)
+		return outHead;
+
+	// TODO: scale factor must be consistent with a single argument version
+	//auto inBlob = cv::dnn::blobFromImages(inputs, 1 / 255.0, cv::Size(96, 96), cv::Scalar(0, 0, 0), swapRB, false, CV_32F);
+	auto inBlob = cv::dnn::blobFromImages(std::vector<cv::Mat>(inHead, inTail), 1 / 255.0,
+		cv::Size(inputImageSize, inputImageSize), cv::Scalar(0, 0, 0), swapRB, false, CV_32F);
+	//auto inBlob = cv::dnn::blobFromImages(cv::InputArrayOfArrays(inHead, inTail), 1 / 255.0, cv::Size(96, 96), cv::Scalar(0, 0, 0), swapRB, false, CV_32F);
+	net.setInput(inBlob);
+	//std::vector<cv::Mat> outputBlobs;
+	//net.forward(outputBlobs);
+	auto outBlob = net.forward();
+
+	std::cout << "Output blob size: " << outBlob.rows << std::endl;
+
+	//std::vector<OpenFace::OutputLabel> outputs{ inputs.size() };
+	for (int i = 0; i < outBlob.rows; ++i)
+	{
+		// TODO: does it work without .clone()?
+		//outputs[i] = outBlob.row(i); 
+		*outHead = outBlob.row(i).clone();
+		++outHead;
+	}
+
+	return outHead;
+}
 
 #endif	// OPENFACE_H
