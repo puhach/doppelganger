@@ -2,11 +2,19 @@
 #include "openface.h"
 
 #include <opencv2/core.hpp>
+#include <opencv2/dnn/dnn.hpp>
 
 // TEST!
 #include <iostream>		
 #include <opencv2/highgui.hpp>
 
+
+//OpenFace& OpenFace::operator = (const OpenFace& other)
+//{
+//	this->modelPath = other.modelPath;
+//	this->net = cv::dnn::readNetFromTorch(modelPath);	// there seems to be no other way to make a deep copy of cv::dnn::Net
+//	return *this;
+//}
 
 std::optional<OpenFace::OutputLabel> OpenFace::operator()(const cv::Mat& input, bool swapRB)
 {
@@ -23,22 +31,6 @@ std::optional<OpenFace::OutputLabel> OpenFace::operator()(const cv::Mat& input, 
 //std::vector<std::optional<OpenFace::OutputLabel>> OpenFace::operator()(const std::vector<std::optional<cv::Mat>>& inputs, bool swapRB)
 std::vector<OpenFace::OutputLabel> OpenFace::operator()(const std::vector<cv::Mat>& inputs, bool swapRB)
 {
-	//std::vector<cv::Mat> images;
-	//std::vector<std::size_t> pos;
-	////for (auto& imOpt : inputs)
-	//for (std::size_t i = 0, j = 0; i < inputs.size(); ++i)
-	//{
-	//	pos.push_back(j);
-
-	//	auto imOpt = inputs[i];
-
-	//	if (imOpt)
-	//	{
-	//		images.push_back(*imOpt);			
-	//		++j;
-	//	}		
-	//}
-
 	// TODO: scale factor must be consistent with a single argument version
 	auto inBlob = cv::dnn::blobFromImages(inputs, 1 / 255.0, cv::Size(96, 96), cv::Scalar(0, 0, 0), swapRB, false, CV_32F);
 	net.setInput(inBlob);
@@ -46,21 +38,8 @@ std::vector<OpenFace::OutputLabel> OpenFace::operator()(const std::vector<cv::Ma
 	//net.forward(outputBlobs);
 	auto outBlob = net.forward();
 
-	std::cout << "Output blob size: " << outBlob.rows << std::endl;
-
-	//std::vector<std::optional<OpenFace::OutputLabel>> outputs{ inputs.size(), std::nullopt };
-	//if (outBlob.rows == inputs.size())
-	//{
-	//	for (int i = 0; i < outBlob.rows; ++i)
-	//	{
-	//		//if (i == pos[i])
-	//		if (inputs[i])
-	//			outputs[i] = outBlob.row(pos.at(i)).clone();
-	//		else
-	//			outputs[i] = std::nullopt;
-	//	}
-	//}
-	
+	//std::cout << "Output blob size: " << outBlob.rows << std::endl;
+		
 	std::vector<OpenFace::OutputLabel> outputs{ inputs.size()};
 	for (int i = 0; i < outBlob.rows; ++i)
 	{
