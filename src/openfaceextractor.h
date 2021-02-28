@@ -4,6 +4,11 @@
 #include <string>
 #include <optional>
 
+// TODO: move these includes to _impl.h file along with operator() definition, but cv::Mat is used in declarations
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/calib3d.hpp>
+
 #include <opencv2/core.hpp>
 //#include <dlib/array2d.h>
 //#include <dlib/pixel.h>
@@ -28,6 +33,8 @@ public:
     {
         dlib::deserialize(landmarkDetectionModel) >> this->landmarkDetector;
     }
+
+    // TODO: define copy/move semantics
 
 	//std::optional<Output> operator()(const std::string& filePath, unsigned long size, const Alignment alignment);
 
@@ -136,8 +143,8 @@ OpenFaceExtractor::Output OpenFaceExtractor::alignFace(const cv::Mat& im, const 
     }
 
     // Find the boundaries in the template of relative landmark coordinates
-    constexpr auto prMinMaxX = std::minmax_element(std::cbegin(lkTemplate), std::cend(lkTemplate), [](auto a, auto b) { return a[0] < b[0]; });
-    constexpr auto prMinMaxY = std::minmax_element(std::cbegin(lkTemplate), std::cend(lkTemplate), [](auto a, auto b) { return a[1] < b[1]; });
+    constexpr auto prMinMaxX = std::minmax_element(std::cbegin(lkTemplate), std::cend(lkTemplate), [](const auto &a, const auto &b) { return a[0] < b[0]; });
+    constexpr auto prMinMaxY = std::minmax_element(std::cbegin(lkTemplate), std::cend(lkTemplate), [](const auto &a, const auto &b) { return a[1] < b[1]; });
 
     // Scale the coordinates from the template to the output image size (this way we obtain target coordinates for face alignment)
     std::array<cv::Point2f, std::size(lkIds)> outPts;   // unfortunately, cv::Point2f has no constexpr constructor

@@ -123,7 +123,7 @@ OutputIterator OpenFace::operator()(InputIterator inHead, InputIterator inTail, 
 	//net.forward(outputBlobs);
 	auto outBlob = net.forward();
 
-	std::cout << "Output blob size: " << outBlob.rows << std::endl;
+	//std::cout << "Output blob size: " << outBlob.rows << std::endl;
 
 	//std::vector<OpenFace::OutputLabel> outputs{ inputs.size() };
 	for (int i = 0; i < outBlob.rows; ++i)
