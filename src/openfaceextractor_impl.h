@@ -17,17 +17,19 @@
 
 inline dlib::full_object_detection OpenFaceExtractor::getLandmarks(const cv::Mat& im)		// face detection is a non-const operation
 {
+    thread_local auto faceDetector = getFaceDetector();
     dlib::cv_image<dlib::bgr_pixel> imDlib(im);
 
-    if (auto faces = this->faceDetector(imDlib); faces.empty())		// no faces detected in this image
+    if (auto faces = faceDetector(imDlib); faces.empty())		// no faces detected in this image
         return dlib::full_object_detection{};
     else
         return this->landmarkDetector(imDlib, faces.front());  // TODO: const ref?
 }	// getLandmarks
 
 
-template <OpenFaceExtractor::Alignment alignment>
-std::optional<OpenFaceExtractor::Output> OpenFaceExtractor::operator()(const std::string& filePath, unsigned long size)
+template <OpenFaceExtractor::Alignment alignment>   // TODO: make it a class template parameter since there is no way to use it in generic context
+//std::optional<OpenFaceExtractor::Output> OpenFaceExtractor::operator()(const std::string& filePath, unsigned long size)
+std::optional<OpenFaceExtractor::Output> OpenFaceExtractor::operator()(const std::string& filePath)
 {
     cv::Mat im = cv::imread(filePath, cv::IMREAD_COLOR);
     CV_Assert(!im.empty());
@@ -36,8 +38,41 @@ std::optional<OpenFaceExtractor::Output> OpenFaceExtractor::operator()(const std
     if (landmarks.num_parts() != std::size(lkTemplate))
         return std::nullopt;
 
-    return alignFace<alignment>(im, landmarks, size);
+    return alignFace<alignment>(im, landmarks, this->size);
 }	// operator ()
+
+
+// TODO: much code is duplicated, perhaps it makes sense to inherit OpenFaceExtractor and DlibFaceExtractor from AbstractDlibExtractor
+
+template <class InputIterator, class OutputIterator>
+OutputIterator OpenFaceExtractor::operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead)
+{
+    assert(inHead <= inTail);
+  
+    std::atomic_flag eflag{ false };
+    std::exception_ptr eptr;
+    outHead = std::transform(std::execution::par, inHead, inTail, outHead,
+        [this, &eflag, &eptr](const auto& filePath) -> std::optional<Output>
+        {
+            try
+            {
+                return (*this)(filePath);
+            }
+            catch (...)
+            {
+                if (!eflag.test_and_set(std::memory_order_acq_rel))
+                    eptr = std::current_exception();
+            }
+
+            return std::nullopt;
+        });	// transform
+
+    if (eptr)
+        std::rethrow_exception(eptr);
+
+    return outHead;
+}
+
 
 
 // This function was translated from the official OpenFace module for Dlib-based alignment:

@@ -3,6 +3,8 @@
 
 #include <optional>
 #include <string>
+#include <execution>
+#include <atomic>
 
 #include <dlib/array2d.h>
 #include <dlib/pixel.h>
@@ -37,11 +39,66 @@ public:
 
 	// TODO: perhaps, add an overload for matrix/array2d? 
 
+	template <class InputIterator, class OutputIterator>
+	OutputIterator operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead);
+
 private:
-	dlib::frontal_face_detector faceDetector = dlib::get_frontal_face_detector();
-	dlib::shape_predictor landmarkDetector;
+
+	static const dlib::frontal_face_detector& getFaceDetector()
+	{
+		static const dlib::frontal_face_detector faceDetector = dlib::get_frontal_face_detector();
+		return faceDetector;
+	}
+
+	//dlib::frontal_face_detector faceDetector = dlib::get_frontal_face_detector();
+	dlib::shape_predictor landmarkDetector;		// Dlib's landmark detector is said to be thread-safe
 	unsigned long size;
 	double padding;
 };	// DlibFaceExtractor
+
+
+template <class InputIterator, class OutputIterator>
+OutputIterator DlibFaceExtractor::operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead)
+{
+	assert(inHead <= inTail);
+
+	//std::vector<dlib::matrix<dlib::rgb_pixel>> images(inTail-inHead);
+	//std::transform(inHead, inTail, images.begin(), [](const auto& filePath) 
+	//	{
+	//		// TODO: exceptions
+	//		dlib::matrix<dlib::rgb_pixel> im;
+	//		dlib::load_image(im, filePath);
+	//		return im;
+	//	});
+
+	//auto faceDetector = getFaceDetector();
+	////std::vector<std::optional<dlib::rectangle>> faceRects(images.size());
+	//std::vector<std::vector<dlib::rectangle>> faceRects(images.size());
+	//faceDetector(images.begin(), images.end(), faceRects.begin());
+
+	std::atomic_flag eflag{ false };
+	std::exception_ptr eptr;
+	outHead = std::transform(std::execution::par, inHead, inTail, outHead, 
+		[this, &eflag, &eptr](const auto& filePath) -> std::optional<Output>
+		{
+			try
+			{
+				//thread_local auto localDetector = getFaceDetector();
+				return (*this)(filePath);
+			}
+			catch (...)
+			{
+				if (!eflag.test_and_set(std::memory_order_acq_rel))
+					eptr = std::current_exception();
+			}
+
+			return std::nullopt;
+		});	// transform
+
+	if (eptr)
+		std::rethrow_exception(eptr);
+		
+	return outHead;
+}
 
 #endif	// DLIBFACEEXTRACTOR_H

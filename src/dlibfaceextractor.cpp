@@ -24,8 +24,8 @@ std::optional<DlibFaceExtractor::Output> DlibFaceExtractor::operator() (const st
 
 	// Detect the face
 
-	//thread_local dlib::frontal_face_detector faceDetector = faceDetectorOrigin;		// copying is faster calling get_frontal_face_detector() every time
-	auto faces = this->faceDetector(im);
+	thread_local dlib::frontal_face_detector faceDetector = getFaceDetector();
+	auto faces = faceDetector(im);
 	if (faces.empty())		// no faces detected in this image
 		return std::nullopt;
 

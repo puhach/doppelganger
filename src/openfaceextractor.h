@@ -24,19 +24,26 @@ public:
 
 	using Output = cv::Mat;
 
-	OpenFaceExtractor(const std::string& landmarkDetectionModel)
+	OpenFaceExtractor(const std::string& landmarkDetectionModel, unsigned long size)
+        : size(size)
     {
         dlib::deserialize(landmarkDetectionModel) >> this->landmarkDetector;
     }
 
     // TODO: define copy/move semantics
 
+    // TODO: add getter/setter for size
+
 	//std::optional<Output> operator()(const std::string& filePath, unsigned long size, const Alignment alignment);
 
     // OpenFace suggests using outerEyesAndNose alignment:
     // https://cmusatyalab.github.io/openface/visualizations/#2-preprocess-the-raw-images
 	template <Alignment alignment = Alignment::OuterEyesAndNose>
-	std::optional<Output> operator()(const std::string& filePath, unsigned long size);
+    std::optional<Output> operator()(const std::string& filePath);
+	//std::optional<Output> operator()(const std::string& filePath, unsigned long size);
+
+    template <class InputIterator, class OutputIterator>
+    OutputIterator operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead);
 
 private:
 		
@@ -44,7 +51,8 @@ private:
 
 	//std::optional<Output> alignFace(const cv::Mat& image, const dlib::full_object_detection& landmarks, const Alignment alignment) const;
 	template <Alignment alignment> 
-	Output alignFace(const cv::Mat& image, const dlib::full_object_detection& landmarks, unsigned long size) const;
+    Output alignFace(const cv::Mat& image, const dlib::full_object_detection& landmarks, unsigned long size) const;
+    //Output alignFace(const cv::Mat& image, const dlib::full_object_detection& landmarks) const;
 
     // The template for aligned facial landmarks
     static constexpr double lkTemplate[68][2] = 
@@ -89,8 +97,15 @@ private:
     static constexpr unsigned long innerEyesAndBottomLip[] = { 39, 42, 57 };
     static constexpr unsigned long outerEyesAndNose[] = { 36, 45, 33 };
 
-	dlib::frontal_face_detector faceDetector = dlib::get_frontal_face_detector();
+    static const dlib::frontal_face_detector& getFaceDetector()
+    {
+        static const dlib::frontal_face_detector faceDetector = dlib::get_frontal_face_detector();
+        return faceDetector;
+    }
+
+	//dlib::frontal_face_detector faceDetector = dlib::get_frontal_face_detector();
 	dlib::shape_predictor landmarkDetector;
+    unsigned long size;
 };	// OpenFaceExtractor
 
 #include "openfaceextractor_impl.h"
