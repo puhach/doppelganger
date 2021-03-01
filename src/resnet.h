@@ -68,10 +68,33 @@ public:
 
     // We could add an overload for OpenCV Mat, but that would introduce a dependency from OpenCV for this class
 
+    template <class InputIterator, class OutputIterator>
+    OutputIterator operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead);
+
 private:
     anet_type net;
 };  // ResNet
+
+
+// TODO: not sure whether this version exploits hardware parallelism, since it is mentioned only in  
+//  template <typename iterable_type> std::vector<output_label_type> operator() (const iterable_type& data, size_t batch_size = 128);
+template <class InputIterator, class OutputIterator>
+OutputIterator ResNet::operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead)
+{
+    // TEST!
+    std::vector<Input> v(inHead, inTail);
+    std::vector<OutputLabel> out = net(v, v.size());
+    outHead = std::copy(out.begin(), out.end(), outHead);
+    return outHead;
+   
+    /*net(inHead, inTail, outHead);
+    auto batchSize = inTail - inHead;
+    outHead += batchSize;
+    return outHead;*/
     
+}   // operator ()
+
+
 namespace network_traits
 {
     // TODO: this is probably not needed anymore

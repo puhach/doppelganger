@@ -87,16 +87,20 @@ int main(int argc, char* argv[])
 		std::string db = "./dataset";
 		std::string cache = "./descriptors.csv";
 
+		//OpenFaceDescriptorComputer openFaceDescriptorComputer{};
 		auto consoleReporter = [](const std::string& msg) {	std::cout << msg << std::endl; };
-		//FaceDb<ResNetFaceDescriptorComputer, L2Distance<ResNetFaceDescriptorComputer::Descriptor>> faceDb{ std::move(consoleReporter) };
-		FaceDb<OpenFaceDescriptorComputer, L2Distance<OpenFaceDescriptorComputer::Descriptor>> faceDb{ std::move(consoleReporter) };
+		FaceDb<ResNetFaceDescriptorComputer, L2Distance<ResNetFaceDescriptorComputer::Descriptor>> faceDb{ std::move(consoleReporter) };
+		//FaceDb<OpenFaceDescriptorComputer, L2Distance<OpenFaceDescriptorComputer::Descriptor>> faceDb{ std::move(consoleReporter) };
 		faceDb.create(db);
 		//FaceDb<ResNetFaceDescriptorComputer> faceDb(db);	// TODO: do we need a default constructor?
 		//faceDb.find("some file", ResNetDescriptorComparator(0.7));
-		//faceDb.save("z:/akla/my.db");
-		faceDb.load("z:/my.db");
-		auto first = faceDb.find("./test/sofia-solares.jpg", 0.6);
-		auto second = faceDb.find("./test/shashikant-pedwal.jpg", 0.6);
+		faceDb.save("z:/openface.db");
+		//faceDb.load("z:/openface.db");
+		//faceDb.load("z:/my.db");
+		auto first = faceDb.find("./test/sofia-solares.jpg", 10.6);
+		//std::cout << (first ? *first : "unknown") << std::endl;
+		auto second = faceDb.find("./test/shashikant-pedwal.jpg", 10.6);
+		
 		std::cout << (first ? *first : "unknown") << " " << (second ? *second : "unknown") << std::endl;
 	}
 	catch (const dlib::cuda_error& e)

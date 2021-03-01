@@ -16,6 +16,7 @@ public:
 	//using Output = dlib::array2d<dlib::rgb_pixel>;
 	using Output = dlib::matrix<dlib::rgb_pixel>;
 
+	// TODO: size and padding should, probably, be specified in the call operator?
 	DlibFaceExtractor(const std::string& landmarkDetectionModel, unsigned long size, double padding = 0.2)
 		: size(size > 0 ? size : throw std::invalid_argument("Image size cannot be zero."))
 		, padding(padding >= 0 ? padding : throw std::invalid_argument("Padding cannot be negative."))

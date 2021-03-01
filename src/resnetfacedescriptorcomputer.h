@@ -18,6 +18,142 @@
 * would lead to performance overhead.
 */
 
+class ResNetFaceDescriptorComputer
+{
+	// TODO: try 5-landmark detector
+	static inline const std::string faceRecognitionModel{ "./dlib_face_recognition_resnet_model_v1.dat" };
+	static inline const std::string landmarkDetectionModel{ "./shape_predictor_68_face_landmarks.dat" };
+
+public:
+
+	using Descriptor = ResNet::OutputLabel;
+
+	ResNetFaceDescriptorComputer()
+		: faceRecognizer(faceRecognitionModel) {}
+
+	// TODO: define copy/move semantics
+
+	std::optional<Descriptor> operator ()(const std::string& file)
+	{
+		DlibFaceExtractor faceExtractor = getFaceExtractor();
+		std::optional<DlibFaceExtractor::Output> face = faceExtractor(file);
+		return face ? this->faceRecognizer(*face) : std::nullopt;
+	}
+
+	std::vector<std::optional<Descriptor>> operator()(const std::vector<std::string>& files, std::size_t maxBatchSize = 32)
+	{
+		std::vector<std::optional<Descriptor>> descriptors(files.size());
+		auto tail = (*this)(files.cbegin(), files.cend(), descriptors.begin(), maxBatchSize);
+		assert(descriptors.end() == tail);
+		return descriptors;
+	}
+
+
+	template <class InputIterator, class OutputIterator>
+	OutputIterator operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead, std::size_t maxBatchSize = 32);
+
+private:
+
+	const DlibFaceExtractor& getFaceExtractor()
+	{
+		static const DlibFaceExtractor faceExtractor{ landmarkDetectionModel, ResNet::inputImageSize, 0.25 };
+		return faceExtractor;
+	};
+
+	ResNet faceRecognizer;
+};	// ResNetFaceDescriptorComputer
+
+
+
+template <class InputIterator, class OutputIterator>
+OutputIterator ResNetFaceDescriptorComputer::operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead, std::size_t maxBatchSize)
+{
+	assert(maxBatchSize > 0);
+	assert(inTail >= inHead);
+
+	//std::size_t total = inTail - inHead, completed = 0;
+	std::atomic_flag eflag{ false };
+	std::exception_ptr eptr;
+	std::vector<std::optional<DlibFaceExtractor::Output>> faces(maxBatchSize);
+	//std::vector<std::optional<Descriptor>> descriptors(inputs.size());
+	std::vector<DlibFaceExtractor::Output> inBatch(maxBatchSize);
+	std::vector<ResNet::OutputLabel> outBatch(maxBatchSize);
+	std::vector<std::size_t> pos(maxBatchSize);	// idices of corresponding items: faces -> batchIn/batchOut
+
+	//for (InputIterator batchTail; completed < total; inHead = inTail)
+	for (InputIterator batchTail; inHead < inTail; inHead = batchTail)
+	{
+		//auto batchSize = std::min(total - completed, maxBatchSize);
+		auto batchSize = std::min(maxBatchSize, static_cast<std::size_t>(inTail - inHead));
+		//n -= batchSize;
+		//inTail = inHead + batchSize;
+		batchTail = inHead + batchSize;
+
+		faces.resize(batchSize);
+		//std::transform(std::execution::par, inHead, inTail, faces.begin(),
+		std::transform(std::execution::par, inHead, batchTail, faces.begin(),
+			[this, &eptr, &eflag](const auto& file) -> std::optional<DlibFaceExtractor::Output>
+			{
+				try
+				{
+					thread_local auto localExtractor = getFaceExtractor();
+					//return localExtractor(file, OpenFace::inputImageSize);
+					return localExtractor(file);
+				}
+				catch (...)
+				{
+					if (!eflag.test_and_set(std::memory_order_acq_rel))
+						eptr = std::current_exception();
+				}
+
+				return std::nullopt;
+			});	// transform
+
+		if (eptr)
+			std::rethrow_exception(eptr);
+
+
+		assert(faces.size() == batchSize);
+		inBatch.clear();
+		pos.clear();
+		for (std::size_t i = 0, j = 0; i < faces.size(); ++i)
+		{
+			pos.push_back(j);	// indices of non-null faces/descriptors in batchIn/batchOut
+
+			if (faces[i])
+			{
+				inBatch.push_back(*faces[i]);
+				++j;
+			}
+			//else std::cout << "empty face: " << *(inHead+) << std::endl;
+			//else std::cout << "empty face: " << std::endl;
+		}	// for i
+
+
+		//std::vector<cv::Mat> batchOut(batchIn.size());
+		outBatch.resize(inBatch.size());
+		auto outBatchTail = this->faceRecognizer(inBatch.cbegin(), inBatch.cend(), outBatch.begin());
+		assert(outBatchTail == outBatch.end());
+
+		outHead = std::transform(faces.cbegin(), faces.cend(), pos.cbegin(), outHead,
+			[&outBatch](const std::optional<DlibFaceExtractor::Output>& face, std::size_t idx) -> std::optional<Descriptor>
+			{
+				assert(idx < outBatch.size());
+				return face ? outBatch[idx] : std::optional<Descriptor>(std::nullopt);
+			});
+
+	}	// while
+
+	//assert(completed == total);
+	assert(inHead == inTail);
+	//return descriptors;
+	return outHead;
+}	// operator ()
+
+
+
+
+/*
 class ResNetFaceDescriptorComputer : DnnFaceDescriptorComputer<ResNet, DlibFaceExtractor>	// TODO: make it final?
 {
     // TODO: try 5-landmark detector
@@ -44,5 +180,6 @@ public:
 private:
 	
 };	// ResNetFaceDescriptorComputer
+*/
 
 #endif	// RESNETFACEDESCRIPTORCOMPUTER_H

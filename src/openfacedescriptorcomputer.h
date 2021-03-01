@@ -77,7 +77,7 @@ public:
 	//}
 
 	
-	std::vector<std::optional<Descriptor>> operator()(const std::vector<std::string>& files, std::size_t maxBatchSize = 64)
+	std::vector<std::optional<Descriptor>> operator()(const std::vector<std::string>& files, std::size_t maxBatchSize = 32)
 	{
 		std::vector<std::optional<Descriptor>> descriptors(files.size());
 		auto tail = (*this)(files.cbegin(), files.cend(), descriptors.begin(), maxBatchSize);	
@@ -87,7 +87,7 @@ public:
 		
 	
 	template <class InputIterator, class OutputIterator>
-	OutputIterator operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead, std::size_t maxBatchSize = 64);
+	OutputIterator operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead, std::size_t maxBatchSize = 32);
 		
 
 	//using Network = OpenFace;
@@ -97,6 +97,7 @@ private:
 
 	const OpenFaceExtractor& getFaceExtractor()
 	{
+		// TODO: should it be const?
 		static OpenFaceExtractor faceExtractor{ landmarkDetectionModel };
 		return faceExtractor;
 	}
