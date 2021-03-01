@@ -1,9 +1,8 @@
 #ifndef OPENFACEDESCRIPTORCOMPUTER_H
 #define OPENFACEDESCRIPTORCOMPUTER_H
 
-
+#include "dnnfacedescriptorcomputer.h"
 #include "openface.h"
-//#include "dnnfacedescriptorcomputer.h"
 //#include "openfacedescriptor.h"
 //#include "dlibfaceextractor.h"
 #include "openfaceextractor.h"
@@ -23,6 +22,18 @@
 #include <dlib/image_io.h>
 
 
+template <>
+template <>
+DnnFaceDescriptorComputer<OpenFaceExtractor, OpenFace>::DnnFaceDescriptorComputer()
+	// TODO: fix paths
+	: faceExtractor("./shape_predictor_68_face_landmarks.dat", OpenFace::inputImageSize)	
+	, faceRecognizer("./nn4.v2.t7", false) {}
+
+
+using OpenFaceDescriptorComputer = DnnFaceDescriptorComputer<OpenFaceExtractor, OpenFace>;
+
+
+/*
 class OpenFaceDescriptorComputer //: DnnFaceDescriptorComputer<OpenFace, DlibFaceExtractor>
 {
 	// TODO: fix paths
@@ -35,18 +46,6 @@ public:
 	//class Descriptor;
 	using Descriptor = OpenFace::Descriptor;
 	
-
-	//// This is an alternative to std::is_nothrow_constructible (slightly shorter in this case). 
-	//// Since we don't care about the destructor, we use "new" rather than T(arg). Also it's a global placement new
-	//// (thus we ignore memory allocation exceptions). In many implementations is_nothrow_constructible is 
-	//// effectively noexcept(T(arg)) though.
-	////OpenFaceDescriptorComputer() noexcept(noexcept(::new (nullptr) DnnFaceDescriptorComputer(faceRecognitionModel, landmarkDetectionModel)))
-
-
-	/*OpenFaceDescriptorComputer() noexcept(std::is_nothrow_constructible_v<DnnFaceDescriptorComputer<OpenFace, DlibFaceExtractor>
-										, decltype(faceRecognitionModel), decltype(landmarkDetectionModel)>)
-		: DnnFaceDescriptorComputer(faceRecognitionModel, DlibFaceExtractor{ landmarkDetectionModel, OpenFace::inputImageSize, 0.25 })
-	{ }*/
 
 	OpenFaceDescriptorComputer()
 		: faceRecognizer(faceRecognitionModel)
@@ -168,8 +167,6 @@ OutputIterator OpenFaceDescriptorComputer::operator()(InputIterator inHead, Inpu
 				inBatch.push_back(*faces[i]);
 				++j;
 			}
-			//else std::cout << "empty face: " << *(inHead+) << std::endl;
-			//else std::cout << "empty face: " << std::endl;
 		}	// for i
 
 
@@ -192,7 +189,7 @@ OutputIterator OpenFaceDescriptorComputer::operator()(InputIterator inHead, Inpu
 	//return descriptors;
 	return outHead;
 }	// operator ()
-
+*/
 
 
 /*
