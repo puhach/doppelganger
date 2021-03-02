@@ -89,9 +89,13 @@ int main(int argc, char* argv[])
 
 		//OpenFaceDescriptorComputer openFaceDescriptorComputer{};
 		auto consoleReporter = [](const std::string& msg) {	std::cout << msg << std::endl; };
-		FaceDb<ResNetFaceDescriptorComputer, L2Distance<ResNetFaceDescriptorComputer::Descriptor>> faceDb{ std::move(consoleReporter) };
-		//FaceDb<OpenFaceDescriptorComputer, L2Distance<OpenFaceDescriptorComputer::Descriptor>> faceDb{ std::move(consoleReporter) };
+		//FaceDb<ResNetFaceDescriptorComputer, L2Distance<ResNetFaceDescriptorComputer::Descriptor>> faceDb{ std::move(consoleReporter) };
+		FaceDb<OpenFaceDescriptorComputer, L2Distance<OpenFaceDescriptorComputer::Descriptor>> faceDb{ std::move(consoleReporter) };
+		auto t = std::chrono::steady_clock::now();
 		faceDb.create(db);
+		auto elapsed = std::chrono::steady_clock::now() - t;
+		std::cout << "elapsed: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count() << std::endl;
+
 		//FaceDb<ResNetFaceDescriptorComputer> faceDb(db);	// TODO: do we need a default constructor?
 		//faceDb.find("some file", ResNetDescriptorComparator(0.7));
 		faceDb.save("z:/openface.db");
