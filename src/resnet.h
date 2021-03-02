@@ -6,6 +6,7 @@
 
 #include <optional>
 #include <execution>
+#include <atomic>
 
 #include <dlib/dnn.h>
 #include <dlib/serialize.h>
@@ -127,12 +128,15 @@ public:
 
     ResNet(const std::string& modelPath) //noexcept(std::is_nothrow_constructible_v<anet_type>)
     {
-        dlib::deserialize(modelPath) >> this->net;  // may throw
+        // TODO: consider just dropping the const, esp. when concurrency is disabled
+        //dlib::deserialize(modelPath) >> this->net;  // may throw
+        dlib::deserialize(modelPath) >> const_cast<anet_type&>(this->net);  // may throw
     }
 
     // TODO: define copy/move semantics
 
-    std::optional<OutputLabel> operator ()(const Input& input) { return net(input); }
+    std::optional<OutputLabel> operator ()(const Input& input);
+    //std::optional<OutputLabel> operator ()(const Input& input) { return net(input); }
 
     // We could add an overload for OpenCV Mat, but that would introduce a dependency from OpenCV for this class
 
@@ -140,38 +144,69 @@ public:
     OutputIterator operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead);
 
 private:
-    anet_type net;
+    const anet_type net;
 };  // ResNet
 
+
+std::optional<ResNet::OutputLabel> ResNet::operator()(const ResNet::Input& input)
+{
+    // anet_type() is non-const and since we are performing inference in multiple threads, we can't modify the original network.
+    // TODO: this extra copy can possibly be avoided when concurrency is disabled
+    auto localNet = this->net;
+    return localNet(input);
+}
 
 // TODO: not sure whether this version exploits hardware parallelism, since it is mentioned only in  
 //  template <typename iterable_type> std::vector<output_label_type> operator() (const iterable_type& data, size_t batch_size = 128);
 template <class InputIterator, class OutputIterator>
 OutputIterator ResNet::operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead)
 {
-    //// TEST!
-    //std::vector<Input> v(inHead, inTail);
-    //std::vector<OutputLabel> out = net(v, v.size());
-    //outHead = std::copy(out.begin(), out.end(), outHead);
-    //return outHead;
    
-    /*net(inHead, inTail, outHead);
-    auto batchSize = inTail - inHead;
-    outHead += batchSize;
-    return outHead;*/
-    
 
     // Dlib's batching for face recognition is not really efficient:
     // https://github.com/davisking/dlib/issues/1159
 
-    outHead = std::transform(std::execution::par, inHead, inTail, outHead, [this](const Input& input) 
-    {
-        // TODO: thread safety, exceptions
-        //thread_local auto faceRecognizer = this->net;
-        thread_local anet_type faceRecognizer;
-        faceRecognizer = this->net;
-        return faceRecognizer(input);
-    });
+    std::atomic_flag eflag{ false };
+    std::exception_ptr eptr;
+    outHead = std::transform(std::execution::par, inHead, inTail, outHead, 
+        [this, &eflag, &eptr](const Input& input) -> std::optional<ResNet::OutputLabel> // ResNet::OutputLabel
+        {
+            try
+            {
+
+                // Since we are performing inference concurrently and the call operator of anet_type is non-const, we have to make 
+                // sure that there is no data race. Using thread_local variables is not an option in this case as they are shared 
+                // among all instances of the class, while we want to perform inference by means of the network from this particular 
+                // instance. That's why we are making a local copy of the network every time before using it. It may seem inefficient, 
+                // but it fact it almost has no impact on the overall processing time. That is for two reasons:        
+                // 1) the time to copy the network is small as compared to the inference time 
+                // 2) other threads can pick up the slack while we are waiting for a copy
+
+                anet_type faceRecognizer = this->net;
+                return faceRecognizer(input);
+            }   // try
+            catch (...)     // exceptions from other threads are not automatically propagated
+            {
+                // A read-modify-write operation with this memory order is both an acquire operation and a release operation. 
+			    // No memory reads or writes in the current thread can be reordered before or after this store. All writes in 
+			    // other threads that release the same atomic variable are visible before the modification and the modification 
+			    // is visible in other threads that acquire the same atomic variable.
+                if (!eflag.test_and_set(std::memory_order_acq_rel))
+                    eptr = std::current_exception();
+            }   // catch
+
+            return std::nullopt;
+            //return ResNet::OutputLabel();
+        });     // transform
+
+    if (eptr)
+        std::rethrow_exception(eptr);
+
+    // TODO: when parallel execution is disabled (no tbb), use batching
+    /*net(inHead, inTail, outHead);
+    auto batchSize = inTail - inHead;
+    outHead += batchSize;
+    return outHead;*/
 
     return outHead;
 }   // operator ()
