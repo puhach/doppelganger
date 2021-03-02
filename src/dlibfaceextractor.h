@@ -13,6 +13,7 @@
 
 
 // TODO: perhaps, rename it to StockDlibFaceExtractor?
+// TODO: perhaps, we should make it a template for different pixel types?
 class DlibFaceExtractor : FaceExtractorHelper<dlib::matrix<dlib::rgb_pixel>>
 {
 public:
@@ -33,7 +34,14 @@ public:
 	double getPadding() const noexcept { return this->padding; }
 	void setPadding() noexcept { this->padding = padding; }
 
-	// TODO: define copy/move semantics
+
+	// Private inheritance prevents slicing and accidental deletion via base class pointer
+
+	DlibFaceExtractor(const DlibFaceExtractor& other) = default;
+	DlibFaceExtractor(DlibFaceExtractor&& other) = default;
+
+	DlibFaceExtractor& operator = (const DlibFaceExtractor& other) = default;
+	DlibFaceExtractor& operator = (DlibFaceExtractor&& other) = default;
 
 	using FaceExtractorHelper::operator();
 
