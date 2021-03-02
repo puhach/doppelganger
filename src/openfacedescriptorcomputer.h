@@ -7,30 +7,39 @@
 //#include "dlibfaceextractor.h"
 #include "openfaceextractor.h"
 
-#include <vector>
-#include <optional>
-#include <execution>
-#include <atomic>
-#include <exception>
+//#include <vector>
+//#include <optional>
+//#include <execution>
+//#include <atomic>
+//#include <exception>
+//
+//#include <dlib/opencv.h>
 
-#include <dlib/opencv.h>
+//// TEST!
+////#include <opencv2/highgui.hpp>	
+//#include <dlib/image_processing.h>
+//#include <dlib/image_processing/frontal_face_detector.h>
+//#include <dlib/image_io.h>
 
-// TEST!
-//#include <opencv2/highgui.hpp>	
-#include <dlib/image_processing.h>
-#include <dlib/image_processing/frontal_face_detector.h>
-#include <dlib/image_io.h>
 
+//template <>
+//template <>
+//DnnFaceDescriptorComputer<OpenFaceExtractor<OpenFaceAlignment::InnerEyesAndBottomLip>, OpenFace>::DnnFaceDescriptorComputer()
+//	// TODO: fix paths
+//	: faceExtractor("./shape_predictor_68_face_landmarks.dat", OpenFace::inputImageSize)	
+//	, faceRecognizer("./nn4.v2.t7", false) {}
 
 template <>
 template <>
-DnnFaceDescriptorComputer<OpenFaceExtractor, OpenFace>::DnnFaceDescriptorComputer()
+DnnFaceDescriptorComputer<OpenFaceExtractor<OpenFaceAlignment::OuterEyesAndNose>, OpenFace>::DnnFaceDescriptorComputer()
 	// TODO: fix paths
-	: faceExtractor("./shape_predictor_68_face_landmarks.dat", OpenFace::inputImageSize)	
+	: faceExtractor("./shape_predictor_68_face_landmarks.dat", OpenFace::inputImageSize)
 	, faceRecognizer("./nn4.v2.t7", false) {}
 
 
-using OpenFaceDescriptorComputer = DnnFaceDescriptorComputer<OpenFaceExtractor, OpenFace>;
+// OpenFace suggests using outerEyesAndNose alignment:
+// https://cmusatyalab.github.io/openface/visualizations/#2-preprocess-the-raw-images
+using OpenFaceDescriptorComputer = DnnFaceDescriptorComputer<OpenFaceExtractor<OpenFaceAlignment::OuterEyesAndNose>, OpenFace>;
 
 
 /*
