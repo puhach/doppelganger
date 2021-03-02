@@ -1,17 +1,54 @@
 #ifndef DLIBFACEEXTRACTOR_H
 #define DLIBFACEEXTRACTOR_H
 
+#include "faceextractorhelper.h"
+
 #include <optional>
 #include <string>
 #include <execution>
 #include <atomic>
 
-#include <dlib/array2d.h>
+#include <dlib/matrix.h>
 #include <dlib/pixel.h>
-#include <dlib/image_processing/frontal_face_detector.h>
-#include <dlib/image_processing/shape_predictor.h>
 
 
+// TODO: perhaps, rename it to StockDlibFaceExtractor?
+class DlibFaceExtractor : FaceExtractorHelper<dlib::matrix<dlib::rgb_pixel>>
+{
+public:
+	
+	using FaceExtractorHelper::Output;
+
+	// DlibFaceExtractor works with both 5 and 68 landmark detection models
+	DlibFaceExtractor(const std::string& landmarkDetectionModel, unsigned long size, double padding = 0.2)
+		: FaceExtractorHelper(landmarkDetectionModel, [this](const std::string& filePath) { return extractFace(filePath); })
+		, size(size > 0 ? size : throw std::invalid_argument("Image size cannot be zero."))
+		, padding(padding >= 0 ? padding : throw std::invalid_argument("Padding cannot be negative."))
+	{		
+	}
+
+	unsigned long getSize() const noexcept { return size; }
+	void setSize(unsigned long size) noexcept { this->size = size; }
+
+	double getPadding() const noexcept { return this->padding; }
+	void setPadding() noexcept { this->padding = padding; }
+
+	// TODO: define copy/move semantics
+
+	using FaceExtractorHelper::operator();
+
+private:
+
+	std::optional<Output> extractFace(const std::string& filePath);
+
+	unsigned long size;
+	double padding;
+};	// DlibFaceExtractor
+
+
+
+
+/*
 class DlibFaceExtractor
 {
 public:
@@ -100,5 +137,6 @@ OutputIterator DlibFaceExtractor::operator()(InputIterator inHead, InputIterator
 		
 	return outHead;
 }
+*/
 
 #endif	// DLIBFACEEXTRACTOR_H
