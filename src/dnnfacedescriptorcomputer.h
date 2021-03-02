@@ -4,6 +4,8 @@
 #include <optional>
 #include <string>
 
+// TODO: perhaps, rename it to just FaceDescriptorComputer?
+
 template <class FaceExtractor, class FaceRecognizer>
 class DnnFaceDescriptorComputer
 {
@@ -40,6 +42,7 @@ private:
 	FaceRecognizer faceRecognizer;
 };	// DnnFaceDescriptorComputer
 
+// TODO: move it to _impl.h file?
 
 template <class FaceExtractor, class FaceRecognizer>
 template <class InputIterator, class OutputIterator>
@@ -52,7 +55,8 @@ OutputIterator DnnFaceDescriptorComputer<FaceExtractor, FaceRecognizer>::operato
 	std::vector<std::optional<typename FaceExtractor::Output>> faces(maxBatchSize);
 	//std::vector<std::optional<Descriptor>> descriptors(inputs.size());
 	std::vector<typename FaceExtractor::Output> inBatch(maxBatchSize);
-	std::vector<Descriptor> outBatch(maxBatchSize);
+	//std::vector<Descriptor> outBatch(maxBatchSize);
+	std::vector<std::optional<Descriptor>> outBatch(maxBatchSize);
 	std::vector<std::size_t> pos(maxBatchSize);	// idices of corresponding items: faces -> batchIn/batchOut
 
 	for (InputIterator batchTail; inHead < inTail; inHead = batchTail)
