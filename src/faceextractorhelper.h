@@ -23,20 +23,21 @@ public:
     using Output = OutputImage;
     using ExtractFaceCallback = std::function<std::optional<Output>(const std::string&)>;
 
-    FaceExtractorHelper(const std::string& landmarkDetectionModel, ExtractFaceCallback&& extractFaceCallback)
-        : extractFaceCallback(std::move(extractFaceCallback)) 
-    {
-        dlib::deserialize(landmarkDetectionModel) >> this->landmarkDetector;
-    }
-
-    // TODO: define copy/move semantics
-
     std::optional<Output> operator()(const std::string& filePath);
 
     template <class InputIterator, class OutputIterator>
     OutputIterator operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead);
 
 protected:
+
+
+    FaceExtractorHelper(const std::string& landmarkDetectionModel, ExtractFaceCallback&& extractFaceCallback)
+        : extractFaceCallback(std::move(extractFaceCallback))
+    {
+        dlib::deserialize(landmarkDetectionModel) >> this->landmarkDetector;
+    }
+
+    // TODO: define copy/move semantics
 
     template <class DlibImage>
     dlib::full_object_detection getLandmarks(DlibImage&& image);		// face detection is a non-const operation
@@ -85,6 +86,7 @@ OutputIterator FaceExtractorHelper<Output>::operator()(InputIterator inHead, Inp
             }
             catch (...)
             {
+                // Prevent racing when multiple threads catch an exception
                 if (!eflag.test_and_set(std::memory_order_acq_rel))
                     eptr = std::current_exception();
             }
@@ -96,7 +98,7 @@ OutputIterator FaceExtractorHelper<Output>::operator()(InputIterator inHead, Inp
         std::rethrow_exception(eptr);
 
     return outHead;
-}
+}   // operator ()
 
 template <class Output>
 template <class DlibImage>
