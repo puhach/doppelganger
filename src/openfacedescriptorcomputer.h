@@ -21,6 +21,16 @@
 //#include <dlib/image_processing/frontal_face_detector.h>
 //#include <dlib/image_io.h>
 
+// TODO: fix paths	
+#define SPECIALIZE_OPENFACEDESCRIPTORCOMPUTER_CTOR(alignment) \
+	template <>	\
+	template <>	\
+	DnnFaceDescriptorComputer<OpenFaceExtractor<alignment>, OpenFace>::DnnFaceDescriptorComputer()	\
+		: faceExtractor("./shape_predictor_68_face_landmarks.dat", OpenFace::inputImageSize)	\
+		, faceRecognizer("./nn4.v2.t7", false) {}	\
+
+SPECIALIZE_OPENFACEDESCRIPTORCOMPUTER_CTOR(OpenFaceAlignment::InnerEyesAndBottomLip)
+SPECIALIZE_OPENFACEDESCRIPTORCOMPUTER_CTOR(OpenFaceAlignment::OuterEyesAndNose)
 
 //template <>
 //template <>
@@ -29,12 +39,12 @@
 //	: faceExtractor("./shape_predictor_68_face_landmarks.dat", OpenFace::inputImageSize)	
 //	, faceRecognizer("./nn4.v2.t7", false) {}
 
-template <>
-template <>
-DnnFaceDescriptorComputer<OpenFaceExtractor<OpenFaceAlignment::OuterEyesAndNose>, OpenFace>::DnnFaceDescriptorComputer()
-	// TODO: fix paths
-	: faceExtractor("./shape_predictor_68_face_landmarks.dat", OpenFace::inputImageSize)
-	, faceRecognizer("./nn4.v2.t7", false) {}
+//template <>
+//template <>
+//DnnFaceDescriptorComputer<OpenFaceExtractor<OpenFaceAlignment::OuterEyesAndNose>, OpenFace>::DnnFaceDescriptorComputer()
+//	// TODO: fix paths
+//	: faceExtractor("./shape_predictor_68_face_landmarks.dat", OpenFace::inputImageSize)
+//	, faceRecognizer("./nn4.v2.t7", false) {}
 
 
 // OpenFace suggests using outerEyesAndNose alignment:
