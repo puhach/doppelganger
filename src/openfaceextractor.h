@@ -6,6 +6,7 @@
 
 #include <string>
 #include <optional>
+#include <exception>
 
 #include <opencv2/core.hpp>     // cv::Mat
 
@@ -30,7 +31,7 @@ public:
     // OpenFaceExtractor expects a path to 68 landmark detection model 
     OpenFaceExtractor(const std::string& landmarkDetectionModel, unsigned long size)
         : FaceExtractorHelper(landmarkDetectionModel, [this](const std::string& filePath) { return extractFace(filePath); })
-        , size(size) {}     // TODO: check image size
+        , size(size > 0 ? size : throw std::invalid_argument("Image size cannot be zero.")) {}     
 
     // TODO: define copy/move semantics
 
