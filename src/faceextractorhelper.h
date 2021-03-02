@@ -25,19 +25,25 @@ public:
 
     std::optional<Output> operator()(const std::string& filePath);
 
+    // TODO: add overloads to take vectors and std::filesystem::path
+
     template <class InputIterator, class OutputIterator>
     OutputIterator operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead);
 
 protected:
 
-
+    // This class is auxiliary and is not supposed to be directly constructed
     FaceExtractorHelper(const std::string& landmarkDetectionModel, ExtractFaceCallback&& extractFaceCallback)
         : extractFaceCallback(std::move(extractFaceCallback))
     {
         dlib::deserialize(landmarkDetectionModel) >> this->landmarkDetector;
     }
 
-    // TODO: define copy/move semantics
+    FaceExtractorHelper(const FaceExtractorHelper& other) = default;
+    FaceExtractorHelper(FaceExtractorHelper&& other) = default;
+    
+    FaceExtractorHelper& operator = (const FaceExtractorHelper& other) = default;
+    FaceExtractorHelper& operator = (FaceExtractorHelper&& other) = default;
 
     template <class DlibImage>
     dlib::full_object_detection getLandmarks(DlibImage&& image);		// face detection is a non-const operation
