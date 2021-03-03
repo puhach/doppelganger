@@ -5,27 +5,30 @@
 
 #include <optional>
 #include <string>
-#include <execution>
+#include <execution>	// TODO: consider moving implementation to _impl.h file
 #include <atomic>
 
-#include <dlib/matrix.h>
+//#include <dlib/matrix.h>
 //#include <dlib/pixel.h>
 
 
 // TODO: perhaps, rename it to StockDlibFaceExtractor?
-template <typename PixelType>
-//class DlibFaceExtractor : FaceExtractorHelper<dlib::matrix<dlib::rgb_pixel>>
-class DlibFaceExtractor : FaceExtractorHelper<dlib::matrix<PixelType>>
+//template <typename PixelType>
+//class DlibFaceExtractor : FaceExtractorHelper<dlib::matrix<PixelType>>
+template <class Image>
+class DlibFaceExtractor : FaceExtractorHelper<Image>
 {
+	//static_assert(std::is_invocable_v<decltype(dlib::load_image<Image>), Image, std::string>, "The specified image type is not supported by Dlib.");
 public:
 	
-	using typename FaceExtractorHelper::Output;
+	using typename DlibFaceExtractor::FaceExtractorHelper::Output;
+	//using typename FaceExtractorHelper::Output;
 	//using FaceExtractorHelper<dlib::matrix<PixelType>>::Output;
 	//using Output = typename FaceExtractorHelper<dlib::matrix<PixelType>>::Output;
 
 	// DlibFaceExtractor works with both 5 and 68 landmark detection models
 	DlibFaceExtractor(const std::string& landmarkDetectionModel, unsigned long size, double padding = 0.2)
-		: FaceExtractorHelper(landmarkDetectionModel, [this](const std::string& filePath) { return extractFace(filePath); })
+		: DlibFaceExtractor::FaceExtractorHelper(landmarkDetectionModel, [this](const std::string& filePath) { return extractFace(filePath); })
 		, size(size > 0 ? size : throw std::invalid_argument("Image size cannot be zero."))
 		, padding(padding >= 0 ? padding : throw std::invalid_argument("Padding cannot be negative."))	{	}
 
@@ -44,7 +47,7 @@ public:
 	DlibFaceExtractor& operator = (const DlibFaceExtractor& other) = default;
 	DlibFaceExtractor& operator = (DlibFaceExtractor&& other) = default;
 
-	using FaceExtractorHelper::operator();
+	using DlibFaceExtractor::FaceExtractorHelper::operator();
 
 private:
 
@@ -56,21 +59,22 @@ private:
 	double padding;
 };	// DlibFaceExtractor
 
-template <typename PixelType>
-std::optional<typename DlibFaceExtractor<PixelType>::Output> DlibFaceExtractor<PixelType>::extractFace(const std::string& filePath)
+//template <typename PixelType>
+//std::optional<typename DlibFaceExtractor<PixelType>::Output> DlibFaceExtractor<PixelType>::extractFace(const std::string& filePath)
+template <class Image>
+std::optional<typename DlibFaceExtractor<Image>::Output> DlibFaceExtractor<Image>::extractFace(const std::string& filePath)
 {
 	// Load the image
-	dlib::array2d<PixelType> im;	// TODO: array or matrix
+	Image im;
 	dlib::load_image(im, filePath);
 
-	auto landmarks = FaceExtractorHelper::getLandmarks(im);		// call the inherited helper function
+	// Obtain the coordinates of facial landmarks
+	auto landmarks = DlibFaceExtractor::FaceExtractorHelper::getLandmarks(im);		// call the inherited helper function
 	if (landmarks.num_parts() < 1)
 		return std::nullopt;
 
 	// Align the face
-	dlib::matrix<PixelType> face;		// TODO: matrix vs array2d
-	//dlib::extract_image_chip(im, dlib::get_face_chip_details(landmarks, 256, 0.25), face);	// TODO: add class parameters
-	//dlib::extract_image_chip(im, dlib::get_face_chip_details(landmarks, inputImageSize<ResNet>, 0.25), face);
+	Image face;
 	dlib::extract_image_chip(im, dlib::get_face_chip_details(landmarks, this->size, this->padding), face);
 
 	return std::move(face);		// prefer move-constructor for std::optional

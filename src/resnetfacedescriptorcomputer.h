@@ -31,15 +31,27 @@
 ////SPECIALIZE_RESNETDESCRIPTORCOMPUTER_CTOR(dlib::rgb_pixel)
 //SPECIALIZE_RESNETDESCRIPTORCOMPUTER_CTOR(dlib::image_traits<ResNet::Input>::pixel_type)
 
+
 template <>
 template <>
-DnnFaceDescriptorComputer<DlibFaceExtractor<ResNet::PixelType>, ResNet>::DnnFaceDescriptorComputer()
+DnnFaceDescriptorComputer<DlibFaceExtractor<ResNet::Input>, ResNet>::DnnFaceDescriptorComputer()
 	// TODO: fix paths
 	: faceExtractor("./shape_predictor_5_face_landmarks.dat", ResNet::inputImageSize, 0.25)
 	, faceRecognizer("./dlib_face_recognition_resnet_model_v1.dat") {}
 
 
-using ResNetFaceDescriptorComputer = DnnFaceDescriptorComputer<DlibFaceExtractor<ResNet::PixelType>, ResNet>;
+using ResNetFaceDescriptorComputer = DnnFaceDescriptorComputer<DlibFaceExtractor<ResNet::Input>, ResNet>;
+
+
+//template <>
+//template <>
+//DnnFaceDescriptorComputer<DlibFaceExtractor<ResNet::PixelType>, ResNet>::DnnFaceDescriptorComputer()
+//	// TODO: fix paths
+//	: faceExtractor("./shape_predictor_5_face_landmarks.dat", ResNet::inputImageSize, 0.25)
+//	, faceRecognizer("./dlib_face_recognition_resnet_model_v1.dat") {}
+//
+//
+//using ResNetFaceDescriptorComputer = DnnFaceDescriptorComputer<DlibFaceExtractor<ResNet::PixelType>, ResNet>;
 
 //using ResNetFaceDescriptorComputer = DnnFaceDescriptorComputer<DlibFaceExtractor<dlib::rgb_pixel>, ResNet>;
 //using ResNetFaceDescriptorComputer = DnnFaceDescriptorComputer<DlibFaceExtractor<dlib::bgr_pixel>, ResNet>;
