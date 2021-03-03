@@ -3,6 +3,7 @@
 
 #include <optional>
 #include <string>
+#include <filesystem>
 
 // TODO: perhaps, rename it to just FaceDescriptorComputer?
 
@@ -14,7 +15,7 @@ public:
 	using Descriptor = typename FaceRecognizer::OutputLabel;
 
 	template <typename ... Args>
-	DnnFaceDescriptorComputer(Args&& ... args);		// the constructor is left to be defined by specializations
+	DnnFaceDescriptorComputer(Args ... args);		// the constructor is left to be defined by specializations
 		
 
 	// TODO: define copy/move semantics
@@ -25,6 +26,11 @@ public:
 		return face ? this->faceRecognizer(*face) : std::nullopt;
 	}
 
+	std::optional<Descriptor> operator()(const std::filesystem::path& file)
+	{
+		return (*this)(file.string());
+	}
+
 	std::vector<std::optional<Descriptor>> operator()(const std::vector<std::string>& files, std::size_t maxBatchSize = 64)
 	{
 		std::vector<std::optional<Descriptor>> descriptors(files.size());
@@ -33,6 +39,13 @@ public:
 		return descriptors;
 	}
 
+	std::vector<std::optional<Descriptor>> operator()(const std::vector<std::filesystem::path>& files, std::size_t maxBatchSize = 64)
+	{
+		std::vector<std::optional<Descriptor>> descriptors(files.size());
+		auto tail = (*this)(files.cbegin(), files.cend(), descriptors.begin(), maxBatchSize);
+		assert(descriptors.end() == tail);
+		return descriptors;
+	}
 
 	template <class InputIterator, class OutputIterator>
 	OutputIterator operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead, std::size_t maxBatchSize);

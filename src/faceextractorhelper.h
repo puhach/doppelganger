@@ -7,6 +7,7 @@
 #include <execution>
 #include <exception>
 #include <string>
+#include <filesystem>
 
 #include <dlib/image_io.h>
 #include <dlib/image_processing.h>
@@ -23,9 +24,9 @@ public:
     using Output = OutputImage;
     using ExtractFaceCallback = std::function<std::optional<Output>(const std::string&)>;
 
-    std::optional<Output> operator()(const std::string& filePath);
+    std::optional<Output> operator()(const std::string& filePath) { return extractFaceCallback(filePath); }
 
-    // TODO: add overloads to take vectors and std::filesystem::path
+    std::optional<Output> operator()(const std::filesystem::path& filePath) { return extractFaceCallback(filePath.string()); }
 
     template <class InputIterator, class OutputIterator>
     OutputIterator operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead);
@@ -56,28 +57,29 @@ private:
         return faceDetector;
     }
 
-    //dlib::frontal_face_detector faceDetector = dlib::get_frontal_face_detector();
+    // Dlib's shape predictor is thread-safe:
+    // http://dlib.net/dlib/image_processing/shape_predictor_abstract.h.html
     dlib::shape_predictor landmarkDetector;
     //std::function<std::optional<Output>(const std::string& filePath)> extractFaceCallback;
     ExtractFaceCallback extractFaceCallback;
     //unsigned long size;
 };  // FaceExtractorHelper
 
-template <class Output>
-std::optional<Output> FaceExtractorHelper<Output>::operator()(const std::string& filePath)
-{
-    return extractFaceCallback(filePath);
-    //Image im = imageLoader(filePath);
+//template <class OutputImage>
+//std::optional<OutputImage> FaceExtractorHelper<OutputImage>::operator()(const std::string& filePath)
+//{
+//    return extractFaceCallback(filePath);
+//}
+//
+//template <class OutputImage>
+//std::optional<OutputImage> FaceExtractorHelper<OutputImage>::operator()(const std::filesystem::path& filePath)
+//{
+//    return 
+//}
 
-    //auto landmarks = landmarkDetector(im);
-
-    ////return alignFace<alignment>(im, landmarks, this->size);
-    //return faceAligner(im, landmarks);
-}
-
-template <class Output>
+template <class OutputImage>
 template <class InputIterator, class OutputIterator>
-OutputIterator FaceExtractorHelper<Output>::operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead)
+OutputIterator FaceExtractorHelper<OutputImage>::operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead)
 {
     assert(inHead <= inTail);
 
@@ -106,17 +108,17 @@ OutputIterator FaceExtractorHelper<Output>::operator()(InputIterator inHead, Inp
     return outHead;
 }   // operator ()
 
-template <class Output>
+template <class OutputImage>
 template <class DlibImage>
-dlib::full_object_detection FaceExtractorHelper<Output>::getLandmarks(DlibImage&& image)		// face detection is a non-const operation
+dlib::full_object_detection FaceExtractorHelper<OutputImage>::getLandmarks(DlibImage&& image)	// face detection is a non-const operation
 {
-    thread_local auto faceDetector = getFaceDetector();
+    thread_local auto faceDetector = getFaceDetector();     // shared by all instances running in the same thread
 
     if (auto faces = faceDetector(image); faces.empty())		// no faces detected in this image
         return dlib::full_object_detection{};
     else
-        return this->landmarkDetector(std::forward<DlibImage>(image), faces.front());  // TODO: const ref?
-}
+        return this->landmarkDetector(std::forward<DlibImage>(image), faces.front());  // the landmark detector is thread-safe
+}   // getLandmarks
 
 #endif	// FACEEXTRACTORHELPER_H
 
