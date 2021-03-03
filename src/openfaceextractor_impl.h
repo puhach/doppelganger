@@ -28,7 +28,9 @@ std::optional<typename OpenFaceExtractor<alignment>::Output> OpenFaceExtractor<a
 
 template <OpenFaceAlignment alignment>
 typename OpenFaceExtractor<alignment>::Output OpenFaceExtractor<alignment>::alignFace(const cv::Mat& image,
-    const dlib::full_object_detection& landmarks, unsigned long size) const
+    const dlib::full_object_detection& landmarks, unsigned long size)
+//typename OpenFaceExtractor<alignment>::Output OpenFaceExtractor<alignment>::alignFace(const cv::Mat& image,
+//    const dlib::full_object_detection& landmarks, unsigned long size) const
 {
     // Depending on the alignment parameter, refer to the landmark indices for inner eye corners and a bottom lip or outer eye corners and a nose
     constexpr const unsigned long(&lkIds)[3] = (alignment == OpenFaceAlignment::InnerEyesAndBottomLip ? innerEyesAndBottomLip : outerEyesAndNose);

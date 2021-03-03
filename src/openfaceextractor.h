@@ -31,9 +31,17 @@ public:
     // OpenFaceExtractor expects a path to 68 landmark detection model 
     OpenFaceExtractor(const std::string& landmarkDetectionModel, unsigned long size)
         : FaceExtractorHelper(landmarkDetectionModel, [this](const std::string& filePath) { return extractFace(filePath); })
+        //: FaceExtractorHelper(landmarkDetectionModel, &OpenFaceExtractor::extractFace)
         , size(size > 0 ? size : throw std::invalid_argument("Image size cannot be zero.")) {}     
 
-    // TODO: define copy/move semantics
+
+    // Private inheritance prevents slicing and accidental deletion via base class pointer
+
+    OpenFaceExtractor(const OpenFaceExtractor& other) = default;
+    OpenFaceExtractor(OpenFaceExtractor&& other) = default;
+
+    OpenFaceExtractor& operator = (const OpenFaceExtractor& other) = default;
+    OpenFaceExtractor& operator = (OpenFaceExtractor&& other) = default;
 
     using FaceExtractorHelper::operator();
 
@@ -85,8 +93,8 @@ private:
 
     std::optional<Output> extractFace(const std::string& filePath);
 
-    
-    Output alignFace(const cv::Mat& image, const dlib::full_object_detection& landmarks, unsigned long size) const;
+    static Output alignFace(const cv::Mat& image, const dlib::full_object_detection& landmarks, unsigned long size);
+    //Output alignFace(const cv::Mat& image, const dlib::full_object_detection& landmarks, unsigned long size) const;
     //Output alignFace(const cv::Mat& image, const dlib::full_object_detection& landmarks) const;
 
     unsigned long size;
