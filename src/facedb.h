@@ -19,9 +19,12 @@
 #include <optional>
 #include <functional>
 
-//#define USE_PRODUCER_CONSUMER	
+// Descriptors must specialize L2Distance or provide their own metric
+template <typename T>
+struct L2Distance;
 
-template <class DescriptorComputer, class DescriptorMetric>
+//template <class DescriptorComputer, class DescriptorMetric>
+template <class DescriptorComputer, class DescriptorMetric = L2Distance<DescriptorComputer::Descriptor>>
 class FaceDb	// TODO: make it final
 {
 	using Descriptor = typename DescriptorComputer::Descriptor;
@@ -74,49 +77,10 @@ public:
 
 	// TODO: add the clear method
 
-	std::optional<std::string> find(const std::string& filePath, double tolerance) const;
+	std::optional<std::string> find(const std::string& filePath, double tolerance);		// non-const since it calls descriptorComputer()
+	//std::optional<std::string> find(const std::string& filePath, double tolerance) const;
 
 private:
-
-	//struct Job
-	//{		
-	//	//std::string className;
-	//	std::filesystem::path filePath;
-	//	int label = -1;
-	//};
-		
-
-#ifdef USE_PRODUCER_CONSUMER
-
-	void listFiles(const std::string& datasetPath);
-
-	void processFiles(const std::string& outputPath);
-
-	//std::string datasetPath;
-	std::mutex mtx;
-	std::condition_variable bufNotFull, bufNotEmpty;
-	int loadedCount = 0, processedCount = 0;
-	bool loadingFinished = false, aborted = false;
-	std::array<Job, 10> buf;	
-
-#else	// !USE_PRODUCER_CONSUMER
-	//std::optional<DescriptorComputer::Descriptor> computeDescriptor(const std::filesystem::path& path);
-#endif	// !USE_PRODUCER_CONSUMER
-
-	// This singleton is intended to be used in conjunction with thread-local variables.
-	// It allows us to create one instance of DescriptorComputer and then duplicate it when necessary
-	// (thus, we don't need to deserialize models again). An important consequence of it is that we can't easily 
-	// update the DescriptorComputer without affecting other instances.
-	static const DescriptorComputer& getDescriptorComputer();	
-
-	//void debugMsg(const std::string& msg);
-
-	// TODO: is it still needed?
-	//struct DescriptorHasher
-	//{
-	//	//std::size_t operator ()(typename DescriptorComputer::Descriptor const& descriptor) const noexcept;
-	//	std::size_t operator ()(Descriptor const& descriptor) const noexcept;
-	//};
 
 	DescriptorComputer descriptorComputer;
 	//DescriptorMetric descriptorMetric;
