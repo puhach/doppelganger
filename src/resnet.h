@@ -10,6 +10,7 @@
 
 #include <dlib/dnn.h>
 #include <dlib/serialize.h>
+#include <dlib/image_processing/generic_image.h>	
 
 /*
 class ResNet
@@ -123,6 +124,7 @@ class ResNet
 public:
     using OutputLabel = typename anet_type::output_label_type;
     using Input = typename anet_type::input_type;       // TODO: probably, not really needed
+    using PixelType = typename dlib::image_traits<Input>::pixel_type;
 
     static constexpr unsigned long inputImageSize = 150;
 
