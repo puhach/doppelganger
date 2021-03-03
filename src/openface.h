@@ -47,8 +47,6 @@ public:
 		Descriptor(DataType&& data)
 			: data(std::move(data)) {}
 
-		// TODO: define copy/move semantics
-
 		Descriptor(const Descriptor& other)
 			: data(other.data.clone()) { }
 
@@ -71,30 +69,30 @@ public:
 
 	static constexpr unsigned long inputImageSize = 96;
 
-	// TODO: perhaps, it makes sense to delete copy constructor and copy assignment operator
-	// since we can't really copy cv::dnn::Net class
 
 	OpenFace(const std::string& modelPath, bool swapRB) 
-		: modelPath(modelPath)
-		, net(cv::dnn::readNetFromTorch(modelPath))
+		: net(cv::dnn::readNetFromTorch(modelPath))
 		, swapRB(swapRB)
 	{ }
 
-	OpenFace(const OpenFace& other)
-		: modelPath(other.modelPath)
-		, net(cv::dnn::readNetFromTorch(modelPath))		// OpenCV provides no way to perform a deep copy of dnn::Net
-		, swapRB(other.swapRB)
-	{ }
+	// OpenCV provides no way to perform a deep copy of dnn::Net
+	OpenFace(const OpenFace& other) = delete;
+	//OpenFace(const OpenFace& other)
+	//	: modelPath(other.modelPath)
+	//	, net(cv::dnn::readNetFromTorch(modelPath))		// OpenCV provides no way to perform a deep copy of dnn::Net
+	//	, swapRB(other.swapRB)
+	//{ }
 
 	OpenFace(OpenFace&& other) = default;
 
-	OpenFace& operator = (const OpenFace& other)
-	{
-		this->modelPath = other.modelPath;
-		this->net = cv::dnn::readNetFromTorch(modelPath);	// there seems to be no other way to make a deep copy of cv::dnn::Net
-		this->swapRB = other.swapRB;
-		return *this;
-	}
+	// OpenCV provides no way to perform a deep copy of dnn::Net
+	OpenFace& operator = (const OpenFace& other) = delete;
+	//{
+	//	this->modelPath = other.modelPath;
+	//	this->net = cv::dnn::readNetFromTorch(modelPath);	// there seems to be no other way to make a deep copy of cv::dnn::Net
+	//	this->swapRB = other.swapRB;
+	//	return *this;
+	//}
 
 	// TODO: add getter/setter for swapRB
 
@@ -102,14 +100,14 @@ public:
 	
 	std::optional<OutputLabel> operator()(const cv::Mat& input);
 
-	//std::vector<std::optional<OutputLabel>> operator()(const std::vector<std::optional<cv::Mat>>& inputs, bool swapRB);
-	std::vector<OutputLabel> operator()(const std::vector<cv::Mat>& inputs);
+	///std::vector<std::optional<OutputLabel>> operator()(const std::vector<std::optional<cv::Mat>>& inputs, bool swapRB);
+	//std::vector<OutputLabel> operator()(const std::vector<cv::Mat>& inputs);
 
 	template <class InputIterator, class OutputIterator>
 	OutputIterator operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead);	
 
 private:
-	cv::String modelPath;
+	//cv::String modelPath;
 	cv::dnn::Net net;
 	bool swapRB;
 };	// OpenFace
