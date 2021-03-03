@@ -122,9 +122,9 @@ class ResNet
 
 
 public:
-    using OutputLabel = typename anet_type::output_label_type;
-    using Input = typename anet_type::input_type;       // TODO: probably, not really needed
-    using PixelType = typename dlib::image_traits<Input>::pixel_type;
+    using OutputLabel = typename anet_type::output_label_type;      // TODO: rename to Output or Descriptor
+    using Input = typename anet_type::input_type;       
+    //using PixelType = typename dlib::image_traits<Input>::pixel_type;
 
     static constexpr unsigned long inputImageSize = 150;
 
@@ -135,12 +135,13 @@ public:
         dlib::deserialize(modelPath) >> const_cast<anet_type&>(this->net);  // may throw
     }
 
-    // TODO: define copy/move semantics
+    ResNet(const ResNet& other) = default;
+    ResNet(ResNet&& other) = default;
+
+    ResNet& operator = (const ResNet& other) = default;
+    ResNet& operator = (ResNet&& other) = default;
 
     std::optional<OutputLabel> operator ()(const Input& input);
-    //std::optional<OutputLabel> operator ()(const Input& input) { return net(input); }
-
-    // We could add an overload for OpenCV Mat, but that would introduce a dependency from OpenCV for this class
 
     template <class InputIterator, class OutputIterator>
     OutputIterator operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead);
@@ -193,7 +194,7 @@ OutputIterator ResNet::operator()(InputIterator inHead, InputIterator inTail, Ou
 			    // No memory reads or writes in the current thread can be reordered before or after this store. All writes in 
 			    // other threads that release the same atomic variable are visible before the modification and the modification 
 			    // is visible in other threads that acquire the same atomic variable.
-                if (!eflag.test_and_set(std::memory_order_acq_rel))
+                if (!eflag.test_and_set(std::memory_order_acq_rel))     // noexcept
                     eptr = std::current_exception();
             }   // catch
 
