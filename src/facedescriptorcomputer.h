@@ -1,21 +1,20 @@
-#ifndef DNNDESCRIPTORCOMPUTER_H
-#define DNNDESCRIPTORCOMPUTER_H
+#ifndef FACEDESCRIPTORCOMPUTER_H
+#define FACEDESCRIPTORCOMPUTER_H
 
 #include <optional>
 #include <string>
 #include <filesystem>
 
-// TODO: perhaps, rename it to just FaceDescriptorComputer?
 
 template <class FaceExtractor, class FaceRecognizer>
-class DnnFaceDescriptorComputer
+class FaceDescriptorComputer
 {
 public:
 
 	using Descriptor = typename FaceRecognizer::OutputLabel;
 
 	template <typename ... Args>
-	DnnFaceDescriptorComputer(Args ... args);		// the constructor is left to be defined by specializations
+	FaceDescriptorComputer(Args&& ... args);		// the constructor is left to be defined by specializations
 		
 
 	// TODO: define copy/move semantics
@@ -53,13 +52,13 @@ public:
 private:
 	FaceExtractor faceExtractor;
 	FaceRecognizer faceRecognizer;
-};	// DnnFaceDescriptorComputer
+};	// FaceDescriptorComputer
 
 // TODO: move it to _impl.h file?
 
 template <class FaceExtractor, class FaceRecognizer>
 template <class InputIterator, class OutputIterator>
-OutputIterator DnnFaceDescriptorComputer<FaceExtractor, FaceRecognizer>::operator()(InputIterator inHead, InputIterator inTail
+OutputIterator FaceDescriptorComputer<FaceExtractor, FaceRecognizer>::operator()(InputIterator inHead, InputIterator inTail
 	, OutputIterator outHead, std::size_t maxBatchSize)
 {
 	assert(maxBatchSize > 0);
@@ -158,4 +157,4 @@ private:
 
 
 
-#endif	//DNNDESCRIPTORCOMPUTER_H
+#endif	// FACEDESCRIPTORCOMPUTER_H

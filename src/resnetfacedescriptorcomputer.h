@@ -2,12 +2,11 @@
 #define RESNETFACEDESCRIPTORCOMPUTER_H
 
 #include "resnet.h"
-#include "dnnfacedescriptorcomputer.h"
+#include "facedescriptorcomputer.h"
 #include "dlibfaceextractor.h"
 
 
 
-//using ResNetFaceDescriptorComputer = DnnFaceDescriptorComputer<ResNet, DlibFaceExtractor>;
 
 /*
 * ResNetFaceDescriptorComputer is a default-constructible class for computing face descriptors using ResNet neural network.
@@ -34,13 +33,17 @@
 
 template <>
 template <>
-DnnFaceDescriptorComputer<DlibFaceExtractor<ResNet::Input>, ResNet>::DnnFaceDescriptorComputer()
+FaceDescriptorComputer<DlibFaceExtractor<ResNet::Input>, ResNet>::FaceDescriptorComputer()
 	// TODO: fix paths
 	: faceExtractor("./shape_predictor_5_face_landmarks.dat", ResNet::inputImageSize, 0.25)
 	, faceRecognizer("./dlib_face_recognition_resnet_model_v1.dat") {}
 
 
-using ResNetFaceDescriptorComputer = DnnFaceDescriptorComputer<DlibFaceExtractor<ResNet::Input>, ResNet>;
+using ResNetFaceDescriptorComputer = FaceDescriptorComputer<DlibFaceExtractor<ResNet::Input>, ResNet>;
+
+
+
+
 
 
 //template <>
