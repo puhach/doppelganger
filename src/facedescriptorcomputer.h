@@ -16,8 +16,12 @@ public:
 	template <typename ... Args>
 	FaceDescriptorComputer(Args&& ... args);		// the constructor is left to be defined by specializations
 		
+	FaceDescriptorComputer(const FaceDescriptorComputer& other) = default;
+	FaceDescriptorComputer(FaceDescriptorComputer&& other) = default;
 
-	// TODO: define copy/move semantics
+	FaceDescriptorComputer& operator = (const FaceDescriptorComputer& other) = default;
+	FaceDescriptorComputer& operator = (FaceDescriptorComputer&& other) = default;
+
 
 	std::optional<Descriptor> operator ()(const std::string& file)
 	{
@@ -50,6 +54,7 @@ public:
 	OutputIterator operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead, std::size_t maxBatchSize);
 
 private:
+
 	FaceExtractor faceExtractor;
 	FaceRecognizer faceRecognizer;
 };	// FaceDescriptorComputer
