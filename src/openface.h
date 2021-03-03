@@ -25,10 +25,7 @@ class OpenFace
 {
 public:
 
-	// There are multiple input types, hence we don't define an alias
-	//using Input = cv::InputArray;
-	//using OutputLabel = cv::Mat;
-	//using OutputLabel = OpenFaceDescriptor;		// TODO: rename OutputLabel
+	using Input = cv::Mat;
 
 	class Descriptor
 	{
@@ -36,8 +33,8 @@ public:
 		friend std::ostream& operator << (std::ostream& stream, const Descriptor& descriptor);
 		friend std::istream& operator >> (std::istream& stream, Descriptor& descriptor);
 
-		using DataType = cv::Mat;
-
+		using DataType = cv::Mat;	// the output type of the network
+		
 	public:
 		Descriptor() = default;
 
@@ -65,7 +62,7 @@ public:
 		DataType data;
 	};	// Descriptor
 
-	using OutputLabel = Descriptor;		// TODO: rename OutputLabel
+	//using OutputLabel = Descriptor;		// TODO: rename OutputLabel
 
 	static constexpr unsigned long inputImageSize = 96;
 
@@ -98,7 +95,9 @@ public:
 
 	OpenFace& operator = (OpenFace&& other) = default;
 	
-	std::optional<OutputLabel> operator()(const cv::Mat& input);
+	std::optional<Descriptor> operator()(const Input& input);
+	//std::optional<OutputLabel> operator()(const Input& input);
+	//std::optional<OutputLabel> operator()(const cv::Mat& input);
 
 	///std::vector<std::optional<OutputLabel>> operator()(const std::vector<std::optional<cv::Mat>>& inputs, bool swapRB);
 	//std::vector<OutputLabel> operator()(const std::vector<cv::Mat>& inputs);

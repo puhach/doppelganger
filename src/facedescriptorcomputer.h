@@ -11,7 +11,8 @@ class FaceDescriptorComputer
 {
 public:
 
-	using Descriptor = typename FaceRecognizer::OutputLabel;
+	//using Descriptor = typename FaceRecognizer::OutputLabel;
+	using Descriptor = typename FaceRecognizer::Descriptor;
 
 	template <typename ... Args>
 	FaceDescriptorComputer(Args&& ... args);		// the constructor is left to be defined by specializations

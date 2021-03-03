@@ -122,7 +122,9 @@ class ResNet
 
 
 public:
-    using OutputLabel = typename anet_type::output_label_type;      // TODO: rename to Output or Descriptor
+
+    //using OutputLabel = typename anet_type::output_label_type;      // TODO: rename to Output or Descriptor
+    using Descriptor = typename anet_type::output_label_type;
     using Input = typename anet_type::input_type;       
     //using PixelType = typename dlib::image_traits<Input>::pixel_type;
 
@@ -141,7 +143,8 @@ public:
     ResNet& operator = (const ResNet& other) = default;
     ResNet& operator = (ResNet&& other) = default;
 
-    std::optional<OutputLabel> operator ()(const Input& input);
+    //std::optional<OutputLabel> operator ()(const Input& input);
+    std::optional<Descriptor> operator ()(const Input& input);
 
     template <class InputIterator, class OutputIterator>
     OutputIterator operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead);
@@ -151,7 +154,8 @@ private:
 };  // ResNet
 
 
-std::optional<ResNet::OutputLabel> ResNet::operator()(const ResNet::Input& input)
+//std::optional<ResNet::OutputLabel> ResNet::operator()(const ResNet::Input& input)
+std::optional<ResNet::Descriptor> ResNet::operator()(const ResNet::Input& input)
 {
     // anet_type() is non-const and since we are performing inference in multiple threads, we can't modify the original network.
     // TODO: this extra copy can possibly be avoided when concurrency is disabled
@@ -172,7 +176,8 @@ OutputIterator ResNet::operator()(InputIterator inHead, InputIterator inTail, Ou
     std::atomic_flag eflag{ false };
     std::exception_ptr eptr;
     outHead = std::transform(std::execution::par, inHead, inTail, outHead, 
-        [this, &eflag, &eptr](const Input& input) -> std::optional<ResNet::OutputLabel> // ResNet::OutputLabel
+        //[this, &eflag, &eptr](const Input& input) -> std::optional<ResNet::OutputLabel> // ResNet::OutputLabel
+        [this, &eflag, &eptr](const Input& input) -> std::optional<ResNet::Descriptor> 
         {
             try
             {

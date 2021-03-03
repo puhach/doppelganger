@@ -4,9 +4,6 @@
 #include <opencv2/core.hpp>
 #include <opencv2/dnn/dnn.hpp>
 
-// TEST!
-#include <iostream>		
-#include <opencv2/highgui.hpp>
 
 
 //OpenFace& OpenFace::operator = (const OpenFace& other)
@@ -16,39 +13,40 @@
 //	return *this;
 //}
 
-//std::optional<OpenFace::OutputLabel> OpenFace::operator()(const cv::Mat& input, bool swapRB)
-std::optional<OpenFace::OutputLabel> OpenFace::operator()(const cv::Mat& input)
+//std::optional<OpenFace::OutputLabel> OpenFace::operator()(const cv::Mat& input)
+//std::optional<OpenFace::OutputLabel> OpenFace::operator()(const Input& input)
+std::optional<OpenFace::Descriptor> OpenFace::operator()(const Input& input)
 {
 	CV_Assert(!input.empty());
 	CV_Assert(input.type() == CV_32FC3 || input.type() == CV_8UC3);
 
-	// TODO: define input size member constant / type trait
+	// TODO: the scale factor must be consistent with a batch version
 	double scaleFactor = input.type() == CV_32FC3 ? 1.0 : 1 / 255.0;
-	auto blob = cv::dnn::blobFromImage(input, scaleFactor, cv::Size(96, 96), cv::Scalar(0, 0, 0), this->swapRB, false, CV_32F);
+	auto blob = cv::dnn::blobFromImage(input, scaleFactor, cv::Size(inputImageSize, inputImageSize), cv::Scalar(0, 0, 0), this->swapRB, false, CV_32F);
 	net.setInput(blob);	
 	return net.forward().clone();	// it seems like a non-owning Mat is returned
 }
 
-//std::vector<OpenFace::OutputLabel> OpenFace::operator()(const std::vector<cv::Mat>& inputs, bool swapRB)
-std::vector<OpenFace::OutputLabel> OpenFace::operator()(const std::vector<cv::Mat>& inputs)
-{
-	// TODO: scale factor must be consistent with a single argument version
-	auto inBlob = cv::dnn::blobFromImages(inputs, 1 / 255.0, cv::Size(96, 96), cv::Scalar(0, 0, 0), this->swapRB, false, CV_32F);
-	net.setInput(inBlob);
-	//std::vector<cv::Mat> outputBlobs;
-	//net.forward(outputBlobs);
-	auto outBlob = net.forward();
-
-	//std::cout << "Output blob size: " << outBlob.rows << std::endl;
-		
-	std::vector<OpenFace::OutputLabel> outputs{ inputs.size()};
-	for (int i = 0; i < outBlob.rows; ++i)
-	{
-		outputs[i] = outBlob.row(i).clone(); // TODO: batch version seems to work without clone()
-	}
-
-	return outputs;
-}
+////std::vector<OpenFace::OutputLabel> OpenFace::operator()(const std::vector<cv::Mat>& inputs, bool swapRB)
+//std::vector<OpenFace::OutputLabel> OpenFace::operator()(const std::vector<cv::Mat>& inputs)
+//{
+//	// TODO: scale factor must be consistent with a single argument version
+//	auto inBlob = cv::dnn::blobFromImages(inputs, 1 / 255.0, cv::Size(96, 96), cv::Scalar(0, 0, 0), this->swapRB, false, CV_32F);
+//	net.setInput(inBlob);
+//	//std::vector<cv::Mat> outputBlobs;
+//	//net.forward(outputBlobs);
+//	auto outBlob = net.forward();
+//
+//	//std::cout << "Output blob size: " << outBlob.rows << std::endl;
+//		
+//	std::vector<OpenFace::OutputLabel> outputs{ inputs.size()};
+//	for (int i = 0; i < outBlob.rows; ++i)
+//	{
+//		outputs[i] = outBlob.row(i).clone(); // TODO: batch version seems to work without clone()
+//	}
+//
+//	return outputs;
+//}
 
 double operator - (const OpenFace::Descriptor& d1, const OpenFace::Descriptor& d2)
 {
