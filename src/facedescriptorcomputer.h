@@ -14,14 +14,15 @@ public:
 	//using Descriptor = typename FaceRecognizer::OutputLabel;
 	using Descriptor = typename FaceRecognizer::Descriptor;
 
-	template <typename ... Args>
-	FaceDescriptorComputer(Args&& ... args);		// the constructor is left to be defined by specializations
+	//template <typename ... Args>
+	////FaceDescriptorComputer(Args&& ... args);		// the constructor is left to be defined by specializations
+	//FaceDescriptorComputer(Args&&... args) = delete;		// the constructor is left to be defined by specializations
 		
-	FaceDescriptorComputer(const FaceDescriptorComputer& other) = default;
+	/*FaceDescriptorComputer(const FaceDescriptorComputer& other) = default;
 	FaceDescriptorComputer(FaceDescriptorComputer&& other) = default;
 
 	FaceDescriptorComputer& operator = (const FaceDescriptorComputer& other) = default;
-	FaceDescriptorComputer& operator = (FaceDescriptorComputer&& other) = default;
+	FaceDescriptorComputer& operator = (FaceDescriptorComputer&& other) = default;*/
 
 
 	std::optional<Descriptor> operator ()(const std::string& file)
@@ -53,6 +54,19 @@ public:
 
 	template <class InputIterator, class OutputIterator>
 	OutputIterator operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead, std::size_t maxBatchSize);
+
+protected:
+
+	template <typename... FaceExtractorArgs, typename... FaceRecognizerArgs>
+	FaceDescriptorComputer(std::tuple<FaceExtractorArgs...> faceExtractorArgs, std::tuple<FaceRecognizerArgs...> faceRecognizerArgs)
+		: faceExtractor(std::make_from_tuple<FaceExtractorArgs>(std::move(faceExtractorArgs)))
+		, faceRecognizer(std::make_from_tuple<FaceRecognizerArgs>(std::move(faceRecognizerArgs))) {}
+
+	FaceDescriptorComputer(const FaceDescriptorComputer& other) = default;
+	FaceDescriptorComputer(FaceDescriptorComputer && other) = default;
+
+	FaceDescriptorComputer& operator = (const FaceDescriptorComputer & other) = default;
+	FaceDescriptorComputer& operator = (FaceDescriptorComputer && other) = default;
 
 private:
 
