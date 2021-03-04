@@ -64,7 +64,8 @@ public:
 
 	//using OutputLabel = Descriptor;		// TODO: rename OutputLabel
 
-	static constexpr unsigned long inputImageSize = 96;
+	static constexpr unsigned long inputSize = 96;
+	//static constexpr unsigned long inputImageSize = 96;
 
 
 	OpenFace(const std::string& modelPath, bool swapRB) 
