@@ -128,7 +128,8 @@ public:
     using Input = typename anet_type::input_type;       
     //using PixelType = typename dlib::image_traits<Input>::pixel_type;
 
-    static constexpr unsigned long inputImageSize = 150;
+    //static constexpr unsigned long inputImageSize = 150;
+    static constexpr unsigned long inputSize = 150;     // the size of an input image
 
     ResNet(const std::string& modelPath) //noexcept(std::is_nothrow_constructible_v<anet_type>)
     {
@@ -224,7 +225,7 @@ namespace network_traits
 {
     // TODO: this is probably not needed anymore
     template <>
-    constexpr inline unsigned long inputImageSize<ResNet> = ResNet::inputImageSize;
+    constexpr inline unsigned long inputImageSize<ResNet> = ResNet::inputSize;
 }
 
 
