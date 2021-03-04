@@ -12,26 +12,20 @@
 //#include "facedb.h"
 
 
-template <class DescriptorComputer, class DescriptorMetric>
-FaceDb<DescriptorComputer, DescriptorMetric>::FaceDb(Reporter&& reporter)
-	: reporter(std::move(reporter)) { }		// std::function's move contructor may throw until C++20
-
-//FaceDb::FaceDb(const std::string& database, const std::string& landmarkDetectorPath)
-template <class DescriptorComputer, class DescriptorMetric>
-FaceDb<DescriptorComputer, DescriptorMetric>::FaceDb(const std::string& database, Reporter&& reporter)
-	: reporter(std::move(reporter))
-//template <class Reporter>
+//template <class DescriptorComputer, class DescriptorMetric>
+//FaceDb<DescriptorComputer, DescriptorMetric>::FaceDb(Reporter&& reporter)
+//	: reporter(std::move(reporter)) { }		// std::function's move contructor may throw until C++20
+//
+////FaceDb::FaceDb(const std::string& database, const std::string& landmarkDetectorPath)
+//template <class DescriptorComputer, class DescriptorMetric>
 //FaceDb<DescriptorComputer, DescriptorMetric>::FaceDb(const std::string& database, Reporter&& reporter)
-//	: reporter(std::forward<Reporter>(reporter))
-{
-	/*dlib::deserialize(landmarkDetectorPath) >> this->landmarkDetector;
-	dlib::deserialize("dlib_face_recognition_resnet_model_v1.dat") >> this->netOrigin;*/
-
-	if (std::filesystem::is_directory(database))
-		create(database);
-	else
-		load(database);
-}	// ctor
+//	: reporter(std::move(reporter))
+//{
+//	if (std::filesystem::is_directory(database))
+//		create(database);
+//	else
+//		load(database);
+//}	// ctor
 
 
 
@@ -355,6 +349,7 @@ std::optional<std::string> FaceDb<DescriptorComputer, DescriptorMetric>::find(co
 		{
 			try
 			{
+				// TODO: this requires DescriptorMetric to be default-constructible
 				return std::make_pair(p.second, DescriptorMetric{}(p.first, query));	// may throw an exception
 			}
 			catch (...)

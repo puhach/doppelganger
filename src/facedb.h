@@ -19,7 +19,7 @@
 #include <optional>
 #include <functional>
 
-// Descriptors must specialize L2Distance or provide their own metric
+// Descriptors must specialize L2Distance or provide custom metric
 template <typename T>
 struct L2Distance;
 
@@ -53,9 +53,19 @@ class FaceDb	// TODO: make it final
 
 public:
 
-	FaceDb(Reporter&& reporter = [](const std::string&) {});	
+	// TODO: noexcept?
+	FaceDb(const DescriptorComputer& descriptorComputer, DescriptorMetric descriptorMetric = DescriptorMetric())
+		: descriptorComputer(descriptorComputer)
+		, descriptorMetric(descriptorMetric) {}
+
+	FaceDb(DescriptorComputer&& descriptorComputer, DescriptorMetric descriptorMetric = DescriptorMetric())
+		: descriptorComputer(std::move(descriptorComputer))
+		, descriptorMetric(descriptorMetric) {}
+
+
+	/*FaceDb(Reporter&& reporter = [](const std::string&) {});	
 		
-	FaceDb(const std::string& database, Reporter&& reporter = [](const std::string&) {});
+	FaceDb(const std::string& database, Reporter&& reporter = [](const std::string&) {});*/
 
 	/*template <typename Reporter = DummyReporter, typename = std::enable_if_t<std::is_invocable_v<Reporter, std::string>>>
 	FaceDb(Reporter&& reporter = Reporter())
@@ -66,6 +76,8 @@ public:
 	
 
 	// TODO: define copy/move semantics
+
+	void setReporter(Reporter reporter) { this->reporter = std::move(reporter); }
 
 	void create(const std::string& datasetPath);
 
@@ -83,8 +95,8 @@ public:
 private:
 
 	DescriptorComputer descriptorComputer;
-	//DescriptorMetric descriptorMetric;
-	Reporter reporter;
+	const DescriptorMetric descriptorMetric;
+	Reporter reporter = [](const std::string& message) { };
 	//std::unordered_map<Descriptor, std::size_t> faceMap;
 	std::vector<std::string> labels;
 	std::vector<std::pair<Descriptor, std::size_t>> faceMap;	
