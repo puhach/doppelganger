@@ -19,56 +19,41 @@
 * would lead to performance overhead.
 */
 
-// TODO: try 5-landmark detector
-//#define SPECIALIZE_RESNETDESCRIPTORCOMPUTER_CTOR(pixel_type)	\
-//	template <>	\
-//	template <>	\
-//	DnnFaceDescriptorComputer<DlibFaceExtractor<pixel_type>, ResNet>::DnnFaceDescriptorComputer()	\
-//		: faceExtractor("./shape_predictor_68_face_landmarks.dat", ResNet::inputImageSize, 0.25)	\
-//		, faceRecognizer("./dlib_face_recognition_resnet_model_v1.dat") {}	
-//
-////SPECIALIZE_RESNETDESCRIPTORCOMPUTER_CTOR(dlib::rgb_pixel)
-//SPECIALIZE_RESNETDESCRIPTORCOMPUTER_CTOR(dlib::image_traits<ResNet::Input>::pixel_type)
 
+class ResNetFaceDescriptorComputer : public FaceDescriptorComputer<DlibFaceExtractor<ResNet::Input>, ResNet>
+{
+public:
+	ResNetFaceDescriptorComputer(const std::string& landmarkDetectionModel, const std::string& faceRecognitionModel, double padding = 0.25)
+		: FaceDescriptorComputer(std::forward_as_tuple(landmarkDetectionModel, ResNet::inputSize, padding), 
+									std::forward_as_tuple(faceRecognitionModel)) { }
 
-template <>
-template <>
-FaceDescriptorComputer<DlibFaceExtractor<ResNet::Input>, ResNet>::FaceDescriptorComputer()
-	// TODO: fix paths
-	: faceExtractor("./shape_predictor_5_face_landmarks.dat", ResNet::inputImageSize, 0.25)
-	, faceRecognizer("./dlib_face_recognition_resnet_model_v1.dat") {}
+	// TODO: define copy/move semantics
+};	// ResNetFaceDescriptorComputer
 
-
-using ResNetFaceDescriptorComputer = FaceDescriptorComputer<DlibFaceExtractor<ResNet::Input>, ResNet>;
-
-
-
-
-
-
-//template <>
-//template <>
-//DnnFaceDescriptorComputer<DlibFaceExtractor<ResNet::PixelType>, ResNet>::DnnFaceDescriptorComputer()
-//	// TODO: fix paths
-//	: faceExtractor("./shape_predictor_5_face_landmarks.dat", ResNet::inputImageSize, 0.25)
-//	, faceRecognizer("./dlib_face_recognition_resnet_model_v1.dat") {}
-//
-//
-//using ResNetFaceDescriptorComputer = DnnFaceDescriptorComputer<DlibFaceExtractor<ResNet::PixelType>, ResNet>;
-
-//using ResNetFaceDescriptorComputer = DnnFaceDescriptorComputer<DlibFaceExtractor<dlib::rgb_pixel>, ResNet>;
-//using ResNetFaceDescriptorComputer = DnnFaceDescriptorComputer<DlibFaceExtractor<dlib::bgr_pixel>, ResNet>;
 
 /*
 template <>
 template <>
-DnnFaceDescriptorComputer<DlibFaceExtractor, ResNet>::DnnFaceDescriptorComputer()
-	// TODO: try 5-landmark detector
-	: faceExtractor("./shape_predictor_68_face_landmarks.dat", ResNet::inputImageSize, 0.25)
-	, faceRecognizer("./dlib_face_recognition_resnet_model_v1.dat") {}
+FaceDescriptorComputer<DlibFaceExtractor<ResNet::Input>, ResNet>::FaceDescriptorComputer(
+	const std::string& landmarkDetectionModel, const std::string& faceRecognitionModel)
+// TODO: fix paths
+	: faceExtractor(landmarkDetectionModel, ResNet::inputSize, 0.25)
+	, faceRecognizer(faceRecognitionModel) {}
+
+//template <>
+//template <>
+//FaceDescriptorComputer<DlibFaceExtractor<ResNet::Input>, ResNet>::FaceDescriptorComputer(
+//	const char* landmarkDetectionModel, const char* faceRecognitionModel)
+//	// TODO: fix paths
+//	: faceExtractor(landmarkDetectionModel, ResNet::inputSize, 0.25)
+//	, faceRecognizer(faceRecognitionModel) {}
 
 
-using ResNetFaceDescriptorComputer = DnnFaceDescriptorComputer<DlibFaceExtractor, ResNet>;
+using ResNetFaceDescriptorComputer = FaceDescriptorComputer<DlibFaceExtractor<ResNet::Input>, ResNet>;
+
 */
+
+
+
 
 #endif	// RESNETFACEDESCRIPTORCOMPUTER_H
