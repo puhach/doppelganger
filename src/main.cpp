@@ -9,6 +9,7 @@
 #include <iostream>
 #include <cassert>
 #include <chrono>	// TEST!
+#include <filesystem>
 
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
@@ -70,13 +71,47 @@ std::vector<cv::Point> loadLandmarks(const std::string& fileName)
 }
 
 
+template <class DescriptorComputer>
+void execute(DescriptorComputer&& descriptorComputer, const std::string& database, const std::string& cache, const std::string& query, double tolerance)
+{
+	FaceDb<DescriptorComputer> faceDb{ std::forward<DescriptorComputer>(descriptorComputer) };
+	faceDb.setReporter([](const std::string& message) { std::cout << message << std::endl; });
+	
+	if (std::filesystem::is_directory(database))	// dataset directory specified
+	{
+		faceDb.create(database);
+		
+		if (!cache.empty())			// if the database cache file is specified, save descriptors there,
+			faceDb.save(cache);		// so we don't have to recreate it every time
+	}
+	else	// load the database from the existing file
+	{
+		faceDb.load(database);
+	}
+	
+	if (!query.empty())		// if query is specified, try to find this person in the database
+	{
+		auto result = faceDb.find(query, tolerance);
+
+		// TODO: show the image and print the name 
+		if (result)
+			std::cout << *result << std::endl;
+		else
+			std::cout << "unknown" << std::endl;
+	}
+}	// execute
 
 int main(int argc, char* argv[])
 {
-	
+	using namespace std::string_literals;
 
 	try
 	{
+		const std::string landmarkDetectionModel5{ "./shape_predictor_5_face_landmarks.dat" };
+		const std::string landmarkDetectionModel68{ "./shape_predictor_68_face_landmarks.dat" };
+		const std::string resNetModel{ "./dlib_face_recognition_resnet_model_v1.dat" };
+		const std::string openFaceModel{ "./nn4.v2.t7" };
+
 		// doppelganger --enroll=<image/directory> --find=<file>
 		/// doppelganger --load=<descriptors file> [--find=<file>]
 		/// doppelganger [--load=<descriptors file> ] [--enroll=<image/directory>] [--save=<descriptors file>] [--find=<file>]
@@ -85,27 +120,46 @@ int main(int argc, char* argv[])
 		// doppelganger --database=<file or directory> [--cache=<file>] [--query=<image file>]
 
 		std::string db = "./dataset";
-		std::string cache = "./descriptors.csv";
-
-		//OpenFaceDescriptorComputer openFaceDescriptorComputer{};
-		auto consoleReporter = [](const std::string& msg) {	std::cout << msg << std::endl; };
-		//FaceDb<ResNetFaceDescriptorComputer, L2Distance<ResNetFaceDescriptorComputer::Descriptor>> faceDb{ std::move(consoleReporter) };
-		FaceDb<OpenFaceDescriptorComputer, L2Distance<OpenFaceDescriptorComputer::Descriptor>> faceDb{ std::move(consoleReporter) };
-		auto t = std::chrono::steady_clock::now();
-		faceDb.create(db);
-		auto elapsed = std::chrono::steady_clock::now() - t;
-		std::cout << "elapsed: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count() << std::endl;
-
-		//FaceDb<ResNetFaceDescriptorComputer> faceDb(db);	// TODO: do we need a default constructor?
-		//faceDb.find("some file", ResNetDescriptorComparator(0.7));
-		faceDb.save("z:/openface.db");
-		//faceDb.load("z:/openface.db");
-		//faceDb.load("z:/my.db");
-		auto first = faceDb.find("./test/sofia-solares.jpg", 10.6);
-		//std::cout << (first ? *first : "unknown") << std::endl;
-		auto second = faceDb.find("./test/shashikant-pedwal.jpg", 10.6);
+		std::string cache = "./descriptors.db";
+		std::string query = "./test/sofia-solares.jpg";
+		std::string algorithm = "ResNet";
+		double tolerance = 0.7;
 		
-		std::cout << (first ? *first : "unknown") << " " << (second ? *second : "unknown") << std::endl;
+		//std::transform(algorithm.cbegin(), algorithm.cend(), algorithm.begin(), [](char c) { return std::tolower(c); });
+		std::transform(algorithm.cbegin(), algorithm.cend(), algorithm.begin(), static_cast<int (*)(int)>(&std::tolower));
+
+		if (algorithm == "resnet")
+		{			
+			ResNetFaceDescriptorComputer descriptorComputer{ landmarkDetectionModel5, resNetModel };
+			execute(std::move(descriptorComputer), db, cache, query, tolerance);
+		}
+		else if (algorithm == "openface")
+		{
+			OpenFaceDescriptorComputer descriptorComputer{ landmarkDetectionModel68, openFaceModel };
+			execute(std::move(descriptorComputer), db, cache, query, tolerance);
+		}
+		else throw std::invalid_argument("Unsupported algorithm: " + algorithm);
+
+		////OpenFaceDescriptorComputer openFaceDescriptorComputer{};
+		//auto consoleReporter = [](const std::string& msg) {	std::cout << msg << std::endl; };
+		////FaceDb<ResNetFaceDescriptorComputer, ResMetric<ResNetFaceDescriptorComputer::Descriptor>> faceDb{ std::move(consoleReporter) };
+		//FaceDb<ResNetFaceDescriptorComputer, L2Distance<ResNetFaceDescriptorComputer::Descriptor>> faceDb{ std::move(consoleReporter) };
+		////FaceDb<OpenFaceDescriptorComputer, L2Distance<OpenFaceDescriptorComputer::Descriptor>> faceDb{ std::move(consoleReporter) };
+		//auto t = std::chrono::steady_clock::now();
+		//faceDb.create(db);
+		//auto elapsed = std::chrono::steady_clock::now() - t;
+		//std::cout << "elapsed: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count() << std::endl;
+
+		////FaceDb<ResNetFaceDescriptorComputer> faceDb(db);	// TODO: do we need a default constructor?
+		////faceDb.find("some file", ResNetDescriptorComparator(0.7));
+		//faceDb.save("z:/openface.db");
+		////faceDb.load("z:/openface.db");
+		////faceDb.load("z:/my.db");
+		//auto first = faceDb.find("./test/sofia-solares.jpg", 10.6);
+		////std::cout << (first ? *first : "unknown") << std::endl;
+		//auto second = faceDb.find("./test/shashikant-pedwal.jpg", 10.6);
+		//
+		//std::cout << (first ? *first : "unknown") << " " << (second ? *second : "unknown") << std::endl;
 	}
 	catch (const dlib::cuda_error& e)
 	{
