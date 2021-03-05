@@ -22,6 +22,59 @@ class FaceExtractorHelper
 public:
 
     using Output = OutputImage;
+    //using ExtractFaceCallback = std::function<std::optional<Output>(const std::string&)>;
+    using ExtractFaceCallback = std::optional<Output> (FaceExtractorHelper::*)(const std::string& );
+
+    std::optional<Output> operator()(const std::string& filePath) { return (this->*extractFaceCallback)(filePath); }
+
+    std::optional<Output> operator()(const std::filesystem::path& filePath) { return (this->*extractFaceCallback)(filePath.string()); }
+
+    template <class InputIterator, class OutputIterator>
+    OutputIterator operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead);
+
+protected:
+
+    // This class is auxiliary and is not supposed to be directly constructed
+    FaceExtractorHelper(const std::string& landmarkDetectionModel, ExtractFaceCallback&& extractFaceCallback)
+        : extractFaceCallback(std::move(extractFaceCallback))
+    {
+        dlib::deserialize(landmarkDetectionModel) >> this->landmarkDetector;
+    }
+
+    FaceExtractorHelper(const FaceExtractorHelper& other) = default;
+    FaceExtractorHelper(FaceExtractorHelper&& other) = default;
+
+    FaceExtractorHelper& operator = (const FaceExtractorHelper& other) = default;
+    FaceExtractorHelper& operator = (FaceExtractorHelper&& other) = default;
+
+    template <class DlibImage>
+    dlib::full_object_detection getLandmarks(DlibImage&& image);		// face detection is a non-const operation
+
+private:
+
+    static const dlib::frontal_face_detector& getFaceDetector()
+    {
+        static const dlib::frontal_face_detector faceDetector = dlib::get_frontal_face_detector();
+        return faceDetector;
+    }
+
+    // Dlib's shape predictor is thread-safe:
+    // http://dlib.net/dlib/image_processing/shape_predictor_abstract.h.html
+    dlib::shape_predictor landmarkDetector;
+    //std::function<std::optional<Output>(const std::string& filePath)> extractFaceCallback;
+    ExtractFaceCallback extractFaceCallback = nullptr;
+    //unsigned long size;
+};  // FaceExtractorHelper
+
+
+/*
+//template <class OutputImage, class ExtractFaceCallback>
+template <class OutputImage>
+class FaceExtractorHelper
+{
+public:
+
+    using Output = OutputImage;
     using ExtractFaceCallback = std::function<std::optional<Output>(const std::string&)>;
 
     std::optional<Output> operator()(const std::string& filePath) { return extractFaceCallback(filePath); }
@@ -64,6 +117,8 @@ private:
     ExtractFaceCallback extractFaceCallback;
     //unsigned long size;
 };  // FaceExtractorHelper
+*/
+
 
 //template <class OutputImage>
 //std::optional<OutputImage> FaceExtractorHelper<OutputImage>::operator()(const std::string& filePath)
@@ -85,7 +140,8 @@ OutputIterator FaceExtractorHelper<OutputImage>::operator()(InputIterator inHead
 
     std::atomic_flag eflag{ false };
     std::exception_ptr eptr;
-    outHead = std::transform(std::execution::par, inHead, inTail, outHead,
+    //outHead = std::transform(std::execution::par, inHead, inTail, outHead,
+    outHead = std::transform(std::execution::seq, inHead, inTail, outHead,      // TEST!
         [this, &eflag, &eptr](const auto& filePath) -> std::optional<Output>
         {
             try
