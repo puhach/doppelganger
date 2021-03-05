@@ -283,7 +283,8 @@ void FaceDb<DescriptorComputer, DescriptorMetric>::load(const std::string& datab
 		{
 			Descriptor d;		// descriptors must be default-constructible
 			std::size_t label;
-			db >> d >> label;		// descriptors must be deserializable by means of >> operator
+			//db >> d >> label;		// descriptors must be deserializable by means of >> operator
+			db >> label >> d;		// descriptors must be deserializable by means of >> operator
 			this->faceMap.emplace_back(std::move(d), label);	// add the descriptor and the label to the map
 		}	// i
 
@@ -316,7 +317,7 @@ void FaceDb<DescriptorComputer, DescriptorMetric>::save(const std::string& datab
 		db << this->faceMap.size() << std::endl;
 		for (const auto& [descriptor, label] : this->faceMap)
 		{
-			db << descriptor << std::endl << label << std::endl;
+			db << label << std::endl << descriptor << std::endl;
 		}
 
 		this->reporter("The database has been saved.");
@@ -351,8 +352,8 @@ std::optional<std::string> FaceDb<DescriptorComputer, DescriptorMetric>::find(co
 			{
 				// TEST!
 				// Descriptor metric must not create a race
-				//return std::make_pair(p.second, this->descriptorMetric(p.first, query));	// may throw an exception
-				return std::make_pair(p.second, DescriptorMetric{ this->descriptorMetric }(p.first, query));	// may throw an exception
+				return std::make_pair(p.second, this->descriptorMetric(p.first, query));	// may throw an exception
+				//return std::make_pair(p.second, DescriptorMetric{ this->descriptorMetric }(p.first, query));	// may throw an exception
 				/// TODO: this requires DescriptorMetric to be default-constructible
 				//return std::make_pair(p.second, DescriptorMetric{}(p.first, query));	// may throw an exception
 			}
