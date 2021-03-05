@@ -95,7 +95,7 @@ OutputIterator FaceExtractorHelper<OutputImage>::operator()(InputIterator inHead
             catch (...)
             {
                 // Prevent racing when multiple threads catch an exception
-                if (!eflag.test_and_set(std::memory_order_acq_rel))
+                if (!eflag.test_and_set(std::memory_order_acq_rel))     // noexcept
                     eptr = std::current_exception();
             }
 

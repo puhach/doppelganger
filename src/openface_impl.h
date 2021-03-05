@@ -13,9 +13,8 @@ OutputIterator OpenFace::operator()(InputIterator inHead, InputIterator inTail, 
 		return outHead;
 
 	// TODO: scale factor must be consistent with a single argument version
-	//auto inBlob = cv::dnn::blobFromImages(inputs, 1 / 255.0, cv::Size(96, 96), cv::Scalar(0, 0, 0), swapRB, false, CV_32F);
 	auto inBlob = cv::dnn::blobFromImages(std::vector<cv::Mat>(inHead, inTail), 1 / 255.0,
-		cv::Size(inputImageSize, inputImageSize), cv::Scalar(0, 0, 0), this->swapRB, false, CV_32F);
+		cv::Size(inputSize, inputSize), cv::Scalar(0, 0, 0), this->swapRB, false, CV_32F);
 	//auto inBlob = cv::dnn::blobFromImages(cv::InputArrayOfArrays(inHead, inTail), 1 / 255.0, cv::Size(96, 96), cv::Scalar(0, 0, 0), swapRB, false, CV_32F);
 	net.setInput(inBlob);
 	//std::vector<cv::Mat> outputBlobs;

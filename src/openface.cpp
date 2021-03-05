@@ -22,7 +22,7 @@ std::optional<OpenFace::Descriptor> OpenFace::operator()(const Input& input)
 
 	// TODO: the scale factor must be consistent with a batch version
 	double scaleFactor = input.type() == CV_32FC3 ? 1.0 : 1 / 255.0;
-	auto blob = cv::dnn::blobFromImage(input, scaleFactor, cv::Size(inputImageSize, inputImageSize), cv::Scalar(0, 0, 0), this->swapRB, false, CV_32F);
+	auto blob = cv::dnn::blobFromImage(input, scaleFactor, cv::Size(inputSize, inputSize), cv::Scalar(0, 0, 0), this->swapRB, false, CV_32F);
 	net.setInput(blob);	
 	return net.forward().clone();	// it seems like a non-owning Mat is returned
 }

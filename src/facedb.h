@@ -19,9 +19,12 @@
 #include <optional>
 #include <functional>
 
-// Descriptors must specialize L2Distance or provide custom metric
+
+// By default L2Distance is used as a measure of similarity between faces (face descriptors). Thus, it must be specialized for
+// descriptor types in use. Alternatively, a custom metric can be defined and specified as a template parameter for FaceDb.
 template <typename T>
 struct L2Distance;
+
 
 //template <class DescriptorComputer, class DescriptorMetric>
 template <class DescriptorComputer, class DescriptorMetric = L2Distance<DescriptorComputer::Descriptor>>
@@ -30,7 +33,9 @@ class FaceDb	// TODO: make it final
 	using Descriptor = typename DescriptorComputer::Descriptor;
 	using Reporter = std::function<void(const std::string&)>;
 
-	static_assert(std::is_default_constructible_v<DescriptorComputer>, "The descriptor computer type must be default-constructible.");
+	/*
+	//static_assert(std::is_copy_constructible_v<Descriptor>, "The ");
+	//static_assert(std::is_default_constructible_v<DescriptorComputer>, "The descriptor computer type must be default-constructible.");
 	static_assert(std::is_invocable_r_v<Descriptor, DescriptorComputer, std::string> || 
 		std::is_invocable_r_v<std::optional<Descriptor>, DescriptorComputer, std::string>, 
 		"The descriptor computer must be invocable with a file path string and return a descriptor or optional<descriptor>.");
@@ -47,7 +52,7 @@ class FaceDb	// TODO: make it final
 	static_assert(std::is_default_constructible_v<DescriptorMetric>, "The descriptor metric must be default-constructible.");
 	static_assert(std::is_invocable_r_v<double, DescriptorMetric, Descriptor, Descriptor>,
 		"The distance metric for descriptors must be defined and convertible to double.");
-	
+	*/
 	// It would also be nice to check whether Descriptor can be serialized/deserialized by means of >> and << operators,
 	// but there seems to be no simple way to do it
 

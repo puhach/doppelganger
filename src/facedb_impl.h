@@ -345,12 +345,16 @@ std::optional<std::string> FaceDb<DescriptorComputer, DescriptorMetric>::find(co
 		{
 			return x.second < y.second ? x : y;
 		},
-		[&query=*query, &eptr, &eflag](const std::pair<Descriptor, std::size_t>& p)	// transform
+		[&query=*query, &eptr, &eflag, this](const std::pair<Descriptor, std::size_t>& p)	// transform
 		{
 			try
 			{
-				// TODO: this requires DescriptorMetric to be default-constructible
-				return std::make_pair(p.second, DescriptorMetric{}(p.first, query));	// may throw an exception
+				// TEST!
+				// Descriptor metric must not create a race
+				//return std::make_pair(p.second, this->descriptorMetric(p.first, query));	// may throw an exception
+				return std::make_pair(p.second, DescriptorMetric{ this->descriptorMetric }(p.first, query));	// may throw an exception
+				/// TODO: this requires DescriptorMetric to be default-constructible
+				//return std::make_pair(p.second, DescriptorMetric{}(p.first, query));	// may throw an exception
 			}
 			catch (...)
 			{

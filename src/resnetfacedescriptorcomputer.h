@@ -5,7 +5,7 @@
 #include "facedescriptorcomputer.h"
 #include "dlibfaceextractor.h"
 
-
+#include <tuple>
 
 
 /*
@@ -24,8 +24,8 @@ class ResNetFaceDescriptorComputer : public FaceDescriptorComputer<DlibFaceExtra
 {
 public:
 	ResNetFaceDescriptorComputer(const std::string& landmarkDetectionModel, const std::string& faceRecognitionModel, double padding = 0.25)
-		: FaceDescriptorComputer(std::forward_as_tuple(landmarkDetectionModel, ResNet::inputSize, padding), 
-									std::forward_as_tuple(faceRecognitionModel)) { }
+		: FaceDescriptorComputer(std::forward_as_tuple(landmarkDetectionModel, ResNet::inputSize, padding)
+								, std::forward_as_tuple(faceRecognitionModel)) { }
 
 	// TODO: define copy/move semantics
 };	// ResNetFaceDescriptorComputer

@@ -2,8 +2,6 @@
 #define DLIBMATRIXDISTANCEL2
 
 
-//#include <functional>
-
 #include <dlib/matrix.h>
 
 template <typename T>
@@ -17,7 +15,6 @@ struct L2Distance<dlib::matrix<T, NR, NC, MM, L>>
 		return dlib::length(m1 - m2);
 	}
 };	// L2Distance
-
 
 
 #endif	// DLIBMATRIXDISTANCEL2

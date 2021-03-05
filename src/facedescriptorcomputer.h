@@ -4,6 +4,7 @@
 #include <optional>
 #include <string>
 #include <filesystem>
+#include <tuple>
 
 
 template <class FaceExtractor, class FaceRecognizer>
@@ -59,8 +60,8 @@ protected:
 
 	template <typename... FaceExtractorArgs, typename... FaceRecognizerArgs>
 	FaceDescriptorComputer(std::tuple<FaceExtractorArgs...> faceExtractorArgs, std::tuple<FaceRecognizerArgs...> faceRecognizerArgs)
-		: faceExtractor(std::make_from_tuple<FaceExtractorArgs>(std::move(faceExtractorArgs)))
-		, faceRecognizer(std::make_from_tuple<FaceRecognizerArgs>(std::move(faceRecognizerArgs))) {}
+		: faceExtractor(std::make_from_tuple<FaceExtractor>(std::move(faceExtractorArgs)))
+		, faceRecognizer(std::make_from_tuple<FaceRecognizer>(std::move(faceRecognizerArgs))) {}
 
 	FaceDescriptorComputer(const FaceDescriptorComputer& other) = default;
 	FaceDescriptorComputer(FaceDescriptorComputer && other) = default;

@@ -135,7 +135,9 @@ int main(int argc, char* argv[])
 		}
 		else if (algorithm == "openface")
 		{
-			OpenFaceDescriptorComputer descriptorComputer{ landmarkDetectionModel68, openFaceModel };
+			// OpenFace suggests using outerEyesAndNose alignment:
+			// https://cmusatyalab.github.io/openface/visualizations/#2-preprocess-the-raw-images
+			OpenFaceDescriptorComputer<OpenFaceAlignment::OuterEyesAndNose> descriptorComputer{ landmarkDetectionModel68, openFaceModel };
 			execute(std::move(descriptorComputer), db, cache, query, tolerance);
 		}
 		else throw std::invalid_argument("Unsupported algorithm: " + algorithm);

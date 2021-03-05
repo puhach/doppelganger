@@ -7,36 +7,34 @@
 //#include "dlibfaceextractor.h"
 #include "openfaceextractor.h"
 
-//#include <vector>
-//#include <optional>
-//#include <execution>
-//#include <atomic>
-//#include <exception>
+#include <tuple>
+
+//// TODO: fix paths	
+//#define SPECIALIZE_OPENFACEDESCRIPTORCOMPUTER_CTOR(alignment) \
+//	template <>	\
+//	template <>	\
+//	FaceDescriptorComputer<OpenFaceExtractor<alignment>, OpenFace>::FaceDescriptorComputer(	\
+//		const std::string &landmarkDetectionModel, const std::string& faceRecognitionModel)	\
+//		: faceExtractor(landmarkDetectionModel, OpenFace::inputSize)	\
+//		, faceRecognizer(faceRecognitionModel, false) {}	
 //
-//#include <dlib/opencv.h>
+//SPECIALIZE_OPENFACEDESCRIPTORCOMPUTER_CTOR(OpenFaceAlignment::InnerEyesAndBottomLip)
+//SPECIALIZE_OPENFACEDESCRIPTORCOMPUTER_CTOR(OpenFaceAlignment::OuterEyesAndNose)
+//
+//// TODO: 'using' can also be templated
+//// OpenFace suggests using outerEyesAndNose alignment:
+//// https://cmusatyalab.github.io/openface/visualizations/#2-preprocess-the-raw-images
+//using OpenFaceDescriptorComputer = FaceDescriptorComputer<OpenFaceExtractor<OpenFaceAlignment::OuterEyesAndNose>, OpenFace>;
 
-//// TEST!
-////#include <opencv2/highgui.hpp>	
-//#include <dlib/image_processing.h>
-//#include <dlib/image_processing/frontal_face_detector.h>
-//#include <dlib/image_io.h>
-
-// TODO: fix paths	
-#define SPECIALIZE_OPENFACEDESCRIPTORCOMPUTER_CTOR(alignment) \
-	template <>	\
-	template <>	\
-	FaceDescriptorComputer<OpenFaceExtractor<alignment>, OpenFace>::FaceDescriptorComputer()	\
-		: faceExtractor("./shape_predictor_68_face_landmarks.dat", OpenFace::inputImageSize)	\
-		, faceRecognizer("./nn4.v2.t7", false) {}	\
-
-SPECIALIZE_OPENFACEDESCRIPTORCOMPUTER_CTOR(OpenFaceAlignment::InnerEyesAndBottomLip)
-SPECIALIZE_OPENFACEDESCRIPTORCOMPUTER_CTOR(OpenFaceAlignment::OuterEyesAndNose)
-
-
-// OpenFace suggests using outerEyesAndNose alignment:
-// https://cmusatyalab.github.io/openface/visualizations/#2-preprocess-the-raw-images
-using OpenFaceDescriptorComputer = FaceDescriptorComputer<OpenFaceExtractor<OpenFaceAlignment::OuterEyesAndNose>, OpenFace>;
-
+template <OpenFaceAlignment alignment>
+class OpenFaceDescriptorComputer : public FaceDescriptorComputer<OpenFaceExtractor<alignment>, OpenFace>
+{
+public:
+	// OpenFaceExtractor requires a 68-landmark detection model
+	OpenFaceDescriptorComputer(const std::string& landmarkDetectionModel, const std::string& faceRecognitionModel)
+		: FaceDescriptorComputer(std::forward_as_tuple(landmarkDetectionModel, OpenFace::inputSize)
+								, std::forward_as_tuple(faceRecognitionModel, false)) {}
+};	// OpenFaceDescriptorComputer
 
 
 #endif	// OPENFACEDESCRIPTORCOMPUTER_H
