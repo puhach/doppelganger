@@ -151,7 +151,9 @@ public:
     OutputIterator operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead);
 
 private:
-    const anet_type net;
+
+    //const anet_type net;
+    anet_type net;
 };  // ResNet
 
 
