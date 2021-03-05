@@ -1,27 +1,24 @@
 #ifndef FACEDB_H
 #define FACEDB_H
 
-/// TEST!
-//#include <dlib/matrix.h>
-//#include "dlibmatrixhash.h"
-//#include "myclass.h"
-
-//#include <array>
-//#include <fstream>
-//#include <filesystem>
-//#include <future>
-//#include <condition_variable>
 #include <cassert>
 #include <vector>	
-//#include <map>
-//#include <unordered_map>
 #include <string>
 #include <optional>
 #include <functional>
 
-
-// By default L2Distance is used as a measure of similarity between faces (face descriptors). Thus, it must be specialized for
-// descriptor types in use. Alternatively, a custom metric can be defined and specified as a template parameter for FaceDb.
+/*
+* By default L2Distance is used as a measure of similarity between faces (face descriptors). Thus, it must be specialized for
+* descriptor types. Alternatively, a custom metric can be defined and specified as a template parameter for FaceDb.
+* 
+* Specializations of L2Distance and custom metric functors must define a call operator of the signature equivalent to:
+*	double operator()(const DescriptorType& descriptor1, const DescriptorType& descriptor2) const
+* 
+* When two faces represented by descriptors are similar, the returned value should be small. When they are different, the returned
+* value should be be high. 
+* 
+* Additionally, metric functors must be copy-constructible. The call operator must be data-race-free. 
+*/
 template <typename T>
 struct L2Distance;
 
@@ -32,6 +29,8 @@ class FaceDb	// TODO: make it final
 {
 	using Descriptor = typename DescriptorComputer::Descriptor;
 	using Reporter = std::function<void(const std::string&)>;
+
+	static_assert(std::is_copy_constructible_v<DescriptorMetric>, "The descriptor metric must be copy-constructible.");
 
 	/*
 	//static_assert(std::is_copy_constructible_v<Descriptor>, "The ");
@@ -58,12 +57,13 @@ class FaceDb	// TODO: make it final
 
 public:
 
-	// TODO: noexcept?
-	FaceDb(const DescriptorComputer& descriptorComputer, DescriptorMetric descriptorMetric = DescriptorMetric())
+	FaceDb(const DescriptorComputer& descriptorComputer, DescriptorMetric descriptorMetric = DescriptorMetric()) noexcept(
+			std::is_nothrow_copy_constructible_v<DescriptorComputer> &&	std::is_nothrow_copy_constructible_v<DescriptorMetric>)
 		: descriptorComputer(descriptorComputer)
 		, descriptorMetric(descriptorMetric) {}
 
-	FaceDb(DescriptorComputer&& descriptorComputer, DescriptorMetric descriptorMetric = DescriptorMetric())
+	FaceDb(DescriptorComputer&& descriptorComputer, DescriptorMetric descriptorMetric = DescriptorMetric()) noexcept(
+			std::is_nothrow_move_constructible_v<DescriptorComputer> && std::is_nothrow_copy_constructible_v<DescriptorMetric>)
 		: descriptorComputer(std::move(descriptorComputer))
 		, descriptorMetric(descriptorMetric) {}
 
