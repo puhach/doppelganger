@@ -27,7 +27,7 @@ struct L2Distance;
 
 
 //template <class DescriptorComputer, class DescriptorMetric>
-template <class DescriptorComputer, class DescriptorMetric = L2Distance<DescriptorComputer::Descriptor>>
+template <class DescriptorComputer, class DescriptorMetric = L2Distance<typename DescriptorComputer::Descriptor>>
 class FaceDb	// TODO: make it final
 {
 	using Descriptor = typename DescriptorComputer::Descriptor;

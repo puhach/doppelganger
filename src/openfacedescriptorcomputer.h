@@ -32,8 +32,8 @@ class OpenFaceDescriptorComputer : public FaceDescriptorComputer<OpenFaceExtract
 public:
 	// OpenFaceExtractor requires a 68-landmark detection model
 	OpenFaceDescriptorComputer(const std::string& landmarkDetectionModel, const std::string& faceRecognitionModel)
-		: FaceDescriptorComputer(std::forward_as_tuple(landmarkDetectionModel, OpenFace::inputSize)
-								, std::forward_as_tuple(faceRecognitionModel, false)) {}
+		: FaceDescriptorComputer::FaceDescriptorComputer(std::forward_as_tuple(landmarkDetectionModel, OpenFace::inputSize)
+														, std::forward_as_tuple(faceRecognitionModel, false)) {}
 };	// OpenFaceDescriptorComputer
 
 

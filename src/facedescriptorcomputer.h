@@ -124,7 +124,7 @@ OutputIterator FaceDescriptorComputer<FaceExtractor, FaceRecognizer>::operator()
 		outHead = std::transform(faces.cbegin(), faces.cend(), pos.cbegin(), outHead,
 			[&outBatch](const std::optional<typename FaceExtractor::Output>& face, std::size_t idx) -> std::optional<Descriptor>
 			{
-				assert(idx < outBatch.size());
+				assert(!face || idx < outBatch.size());
 				return face ? std::move(outBatch[idx]) : std::optional<Descriptor>(std::nullopt);
 			});
 
