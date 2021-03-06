@@ -6,6 +6,7 @@
 #include <string>
 #include <optional>
 #include <functional>
+#include <filesystem>
 
 /*
 * By default L2Distance is used as a measure of similarity between faces (face descriptors). Thus, it must be specialized for
@@ -14,44 +15,42 @@
 * Specializations of L2Distance and custom metric functors must define a call operator of the signature equivalent to:
 *	double operator()(const DescriptorType& descriptor1, const DescriptorType& descriptor2) const
 * 
-* When two faces represented by descriptors are similar, the returned value should be small. When they are different, the returned
-* value should be be high. 
-* 
-* Additionally, metric functors must be copy-constructible. The call operator must be data-race-free. 
+* Additionally, metric functors must be copy-constructible. The call operator may not directly or indirectly modify its arguments
+* or any internal data to ensure data-race-free execution in a multithreaded context. 
 */
 template <typename T>
 struct L2Distance;
 
 
-//template <class DescriptorComputer, class DescriptorMetric>
+/*
+* FaceDb creates a database of face descriptors from a directory of input images, stores the descriptors into a file, and provides means
+* for loading them in future. It is possible to search for a face in the database using a specified search criterion. 
+* 
+* This class template is parametrized by a descriptor computer type, which must be a callable object taking in a file or a list of files
+* and returning a face descriptor (or a list of optional descriptors) wrapped into std::optional. In case a descriptor cannot be computed 
+* for a particular input file, the returned value must be std::nullopt. 
+* 
+* The descriptor metric must be a functor callable in a const context, take two descriptors as arguments, and return a double. When two
+* faces represented by descriptors are similar, the returned value should be small. When they are different, the returned value should be 
+* high. The call operator must ensure data race avoidance. 
+*/
+
 template <class DescriptorComputer, class DescriptorMetric = L2Distance<typename DescriptorComputer::Descriptor>>
-class FaceDb	// TODO: make it final
+class FaceDb final	
 {
 	using Descriptor = typename DescriptorComputer::Descriptor;
 	using Reporter = std::function<void(const std::string&)>;
 
+	static_assert(std::is_invocable_r_v<std::optional<Descriptor>, DescriptorComputer, std::string>
+		&& std::is_invocable_r_v<std::vector<std::optional<Descriptor>>, DescriptorComputer, std::vector<std::string>>
+		&& std::is_invocable_r_v<std::optional<Descriptor>, DescriptorComputer, std::filesystem::path>
+		&& std::is_invocable_r_v<std::vector<std::optional<Descriptor>>, DescriptorComputer, std::vector<std::filesystem::path>>,
+		"The descriptor computer must be callable for an input file and a vector of input files. "
+		"Return values must be wrapped into std::optional<T>.");
 	static_assert(std::is_copy_constructible_v<DescriptorMetric>, "The descriptor metric must be copy-constructible.");
+	static_assert(std::is_invocable_r_v<double, const DescriptorMetric&, Descriptor, Descriptor>, 
+		"The descriptor metric must be callable in a const context, take two descriptors as arguments, and return a double.");
 
-	/*
-	//static_assert(std::is_copy_constructible_v<Descriptor>, "The ");
-	//static_assert(std::is_default_constructible_v<DescriptorComputer>, "The descriptor computer type must be default-constructible.");
-	static_assert(std::is_invocable_r_v<Descriptor, DescriptorComputer, std::string> || 
-		std::is_invocable_r_v<std::optional<Descriptor>, DescriptorComputer, std::string>, 
-		"The descriptor computer must be invocable with a file path string and return a descriptor or optional<descriptor>.");
-	//static_assert(std::is_constructible_v<std::minus<Descriptor>>, "Descriptors must define a distance metric.");
-	//static_assert(std::is_invocable_r_v<double, std::minus<Descriptor>, Descriptor, Descriptor>, 
-	//	"The distance metric for descriptors must be convertible to double.");	
-	static_assert(std::is_default_constructible_v<Descriptor> && std::is_move_constructible_v<Descriptor>, 
-		"Descriptors must be default-constructible and move-constructible.");
-	static_assert(std::is_move_assignable_v<Descriptor>, "Descriptors must be move-assignable.");
-	//static_assert(std::is_default_constructible_v<std::equal_to<Descriptor>>, "Descriptors must be comparable for equality.");
-	//static_assert(std::is_default_constructible_v<std::hash<Descriptor>> && std::is_copy_assignable_v<std::hash<Descriptor>> &&
-	//	std::is_swappable_v<std::hash<Descriptor>> && std::is_destructible_v<std::hash<Descriptor>>, 
-	//	"The standard hash function object for the descriptor type must be defined.");
-	static_assert(std::is_default_constructible_v<DescriptorMetric>, "The descriptor metric must be default-constructible.");
-	static_assert(std::is_invocable_r_v<double, DescriptorMetric, Descriptor, Descriptor>,
-		"The distance metric for descriptors must be defined and convertible to double.");
-	*/
 	// It would also be nice to check whether Descriptor can be serialized/deserialized by means of >> and << operators,
 	// but there seems to be no simple way to do it
 
@@ -106,7 +105,7 @@ public:
 
 	//void enroll(const std::string& datasetPath, const std::string& outputPath);
 
-	// TODO: add the clear method
+	void clear();
 
 	std::optional<std::string> find(const std::string& filePath, double tolerance);		// non-const since it calls descriptorComputer()
 	//std::optional<std::string> find(const std::string& filePath, double tolerance) const;
