@@ -1,24 +1,17 @@
 #ifndef OPENFACE_H
 #define OPENFACE_H
 
-//#include "openfacedescriptor.h"
-#include "networktraits.h"
-
 #include <optional>
 #include <string>
 
 #include <opencv2/dnn.hpp>
-//#include <opencv2/dnn/dnn.hpp>
 
-//#include <dlib/matrix.h>
-//#include <dlib/opencv.h>
 
 
 /*
-* OpenFace is not designed to be used in DnnFaceDescriptorComputer directly for the call operator
-* requires the client code to specify whether the Red and Blue channels have to be swapped (OpenCV
-* provides no way to distinguish an RGB image from a BGR image). That said, we can always wrap it
-* in a new class taking the swapRB parameter as a constructor argument.
+* OpenFace implements a callable object to perform face recognition by means of OpenFace model. 
+* It takes in an image or a range of images and outputs face descriptors wrapped into std::optional<T>, which can be std::nullopt in 
+* case of a failure. 
 */
 
 class OpenFace
@@ -27,7 +20,7 @@ public:
 
 	using Input = cv::Mat;
 
-	class Descriptor
+	class Descriptor	// Wraps the real output of the model into an object which can be serialized and compared for similarity
 	{
 		friend double operator - (const Descriptor& d1, const Descriptor& d2);
 		friend std::ostream& operator << (std::ostream& stream, const Descriptor& descriptor);
@@ -58,60 +51,51 @@ public:
 		Descriptor& operator = (Descriptor&& other) = default;
 
 	private:
-		//OpenFace::OutputLabel label;
 		DataType data;
 	};	// Descriptor
 
-	//using OutputLabel = Descriptor;		// TODO: rename OutputLabel
-
 	static constexpr unsigned long inputSize = 96;
-	//static constexpr unsigned long inputImageSize = 96;
-
 
 	OpenFace(const std::string& modelPath, bool swapRB) 
 		: net(cv::dnn::readNetFromTorch(modelPath))
-		, swapRB(swapRB)
-	{ }
-
-	// OpenCV provides no way to perform a deep copy of dnn::Net
-	OpenFace(const OpenFace& other) = delete;
-	//OpenFace(const OpenFace& other)
-	//	: modelPath(other.modelPath)
-	//	, net(cv::dnn::readNetFromTorch(modelPath))		// OpenCV provides no way to perform a deep copy of dnn::Net
-	//	, swapRB(other.swapRB)
-	//{ }
-
+		, swapRB(swapRB) { }
+		
+	OpenFace(const OpenFace& other) = delete;	// OpenCV provides no way to perform a deep copy of dnn::Net
 	OpenFace(OpenFace&& other) = default;
-
-	// OpenCV provides no way to perform a deep copy of dnn::Net
-	OpenFace& operator = (const OpenFace& other) = delete;
-	//{
-	//	this->modelPath = other.modelPath;
-	//	this->net = cv::dnn::readNetFromTorch(modelPath);	// there seems to be no other way to make a deep copy of cv::dnn::Net
-	//	this->swapRB = other.swapRB;
-	//	return *this;
-	//}
-
-	// TODO: add getter/setter for swapRB
-
+	
+	OpenFace& operator = (const OpenFace& other) = delete;	// OpenCV provides no way to perform a deep copy of dnn::Net
 	OpenFace& operator = (OpenFace&& other) = default;
 	
 	std::optional<Descriptor> operator()(const Input& input);
-	//std::optional<OutputLabel> operator()(const Input& input);
-	//std::optional<OutputLabel> operator()(const cv::Mat& input);
-
-	///std::vector<std::optional<OutputLabel>> operator()(const std::vector<std::optional<cv::Mat>>& inputs, bool swapRB);
-	//std::vector<OutputLabel> operator()(const std::vector<cv::Mat>& inputs);
 
 	template <class InputIterator, class OutputIterator>
 	OutputIterator operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead);	
 
 private:
-	//cv::String modelPath;
 	cv::dnn::Net net;
 	bool swapRB;
 };	// OpenFace
 
-#include "openface_impl.h"
+
+template <class InputIterator, class OutputIterator>
+OutputIterator OpenFace::operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead)
+{
+	if (inHead == inTail)
+		return outHead;
+
+	auto inBlob = cv::dnn::blobFromImages(std::vector<cv::Mat>(inHead, inTail), 1 / 255.0, cv::Size(inputSize, inputSize)
+		, cv::Scalar(0, 0, 0), this->swapRB, false, CV_32F);
+	net.setInput(inBlob);
+	auto outBlob = net.forward();
+
+	for (int i = 0; i < outBlob.rows; ++i)
+	{
+		*outHead = outBlob.row(i).clone();	// the network does not seem to give away data ownership and may delete/reuse it any time
+		++outHead;
+	}
+
+	return outHead;
+}	// operator ()
+
 
 #endif	// OPENFACE_H

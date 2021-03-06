@@ -140,8 +140,8 @@ OutputIterator FaceExtractorHelper<OutputImage>::operator()(InputIterator inHead
 
     std::atomic_flag eflag{ false };
     std::exception_ptr eptr;
-    //outHead = std::transform(std::execution::par, inHead, inTail, outHead,
-    outHead = std::transform(std::execution::seq, inHead, inTail, outHead,      // TEST!
+    outHead = std::transform(std::execution::par, inHead, inTail, outHead,
+    //outHead = std::transform(std::execution::seq, inHead, inTail, outHead,      // TEST!
         [this, &eflag, &eptr](const auto& filePath) -> std::optional<Output>
         {
             try

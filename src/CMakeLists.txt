@@ -35,12 +35,18 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 add_executable(doppelganger 
 	main.cpp 
 	facedb.h
-	facedb_impl.h
-	dnnfacedescriptorcomputer.h
 	resnetfacedescriptorcomputer.h
-	resnet.h
+	resnet.h	
+	resnetfacedescriptormetric.h
+	openfacedescriptorcomputer.h
+	openfaceextractor.h
+	openface.h
+	openface.cpp
+	openfacedescriptormetric.h
 	dlibfaceextractor.h
-	dlibfaceextractor.cpp
+	dlibmatrixdistancel2.h
+	facedescriptorcomputer.h
+	faceextractorhelper.h
 )
 
 

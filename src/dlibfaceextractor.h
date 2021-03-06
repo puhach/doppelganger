@@ -5,14 +5,15 @@
 
 #include <optional>
 #include <string>
-#include <execution>	// TODO: consider moving implementation to _impl.h file
+#include <execution>	
 #include <atomic>
 
 //#include <dlib/matrix.h>
 //#include <dlib/pixel.h>
+#include <dlib/image_io.h>
+#include <dlib/image_transforms.h>
 
 
-// TODO: perhaps, rename it to StockDlibFaceExtractor?
 //template <typename PixelType>
 //class DlibFaceExtractor : FaceExtractorHelper<dlib::matrix<PixelType>>
 template <class Image>
@@ -62,57 +63,6 @@ private:
 };	// DlibFaceExtractor
 
 
-/*
-// TODO: perhaps, rename it to StockDlibFaceExtractor?
-//template <typename PixelType>
-//class DlibFaceExtractor : FaceExtractorHelper<dlib::matrix<PixelType>>
-template <class Image>
-class DlibFaceExtractor : FaceExtractorHelper<Image>
-{
-	//static_assert(std::is_invocable_v<decltype(dlib::load_image<Image>), Image, std::string>, "The specified image type is not supported by Dlib.");
-public:
-	
-	using typename DlibFaceExtractor::FaceExtractorHelper::Output;
-	//using typename FaceExtractorHelper::Output;
-	//using FaceExtractorHelper<dlib::matrix<PixelType>>::Output;
-	//using Output = typename FaceExtractorHelper<dlib::matrix<PixelType>>::Output;
-
-	// DlibFaceExtractor works with both 5 and 68 landmark detection models
-	DlibFaceExtractor(const std::string& landmarkDetectionModel, unsigned long size, double padding = 0.2)
-		: DlibFaceExtractor::FaceExtractorHelper(landmarkDetectionModel, [this](const std::string& filePath) { return extractFace(filePath); })
-		, size(size > 0 ? size : throw std::invalid_argument("Image size cannot be zero."))
-		, padding(padding >= 0 ? padding : throw std::invalid_argument("Padding cannot be negative."))	{	}
-
-	unsigned long getSize() const noexcept { return size; }
-	void setSize(unsigned long size) noexcept { this->size = size; }
-
-	double getPadding() const noexcept { return this->padding; }
-	void setPadding() noexcept { this->padding = padding; }
-
-
-	// Private inheritance prevents slicing and accidental deletion via base class pointer
-
-	DlibFaceExtractor(const DlibFaceExtractor& other) = default;
-	DlibFaceExtractor(DlibFaceExtractor&& other) = default;
-
-	DlibFaceExtractor& operator = (const DlibFaceExtractor& other) = default;
-	DlibFaceExtractor& operator = (DlibFaceExtractor&& other) = default;
-
-	using DlibFaceExtractor::FaceExtractorHelper::operator();
-
-private:
-
-	std::optional<Output> extractFace(const std::string& filePath);
-	//std::optional<typename Output> extractFace(const std::string& filePath);
-	//std::optional<typename DlibFaceExtractor<PixelType>::Output> extractFace(const std::string& filePath);
-
-	unsigned long size;
-	double padding;
-};	// DlibFaceExtractor
-*/
-
-//template <typename PixelType>
-//std::optional<typename DlibFaceExtractor<PixelType>::Output> DlibFaceExtractor<PixelType>::extractFace(const std::string& filePath)
 template <class Image>
 std::optional<typename DlibFaceExtractor<Image>::Output> DlibFaceExtractor<Image>::extractFace(const std::string& filePath)
 {

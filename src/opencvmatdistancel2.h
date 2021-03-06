@@ -8,7 +8,7 @@ struct L2Distance;
 
 template <>
 struct L2Distance<cv::Mat>
-{
+{	
 	double operator()(const cv::Mat& m1, const cv::Mat& m2) const
 	{
 		return cv::norm(m1 - m2, cv::NORM_L2);

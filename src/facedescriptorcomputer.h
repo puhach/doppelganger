@@ -6,6 +6,10 @@
 #include <filesystem>
 #include <tuple>
 
+/*
+* FaceDescriptorComputer defines a common interface and provides generic implementation for computing face descriptors.
+* It is designed to be used as a base class for specific face descriptor computers and cannot be instantiated directly.
+*/
 
 template <class FaceExtractor, class FaceRecognizer>
 class FaceDescriptorComputer
@@ -14,16 +18,6 @@ public:
 
 	//using Descriptor = typename FaceRecognizer::OutputLabel;
 	using Descriptor = typename FaceRecognizer::Descriptor;
-
-	//template <typename ... Args>
-	////FaceDescriptorComputer(Args&& ... args);		// the constructor is left to be defined by specializations
-	//FaceDescriptorComputer(Args&&... args) = delete;		// the constructor is left to be defined by specializations
-		
-	/*FaceDescriptorComputer(const FaceDescriptorComputer& other) = default;
-	FaceDescriptorComputer(FaceDescriptorComputer&& other) = default;
-
-	FaceDescriptorComputer& operator = (const FaceDescriptorComputer& other) = default;
-	FaceDescriptorComputer& operator = (FaceDescriptorComputer&& other) = default;*/
 
 
 	std::optional<Descriptor> operator ()(const std::string& file) noexcept(
@@ -87,7 +81,7 @@ private:
 	FaceRecognizer faceRecognizer;
 };	// FaceDescriptorComputer
 
-// TODO: move it to _impl.h file?
+
 
 template <class FaceExtractor, class FaceRecognizer>
 template <class InputIterator, class OutputIterator>

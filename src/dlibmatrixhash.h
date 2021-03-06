@@ -16,28 +16,6 @@
 namespace std
 {
 
-    /*
-    template<> struct hash<dlib::rgb_pixel>
-    {
-        std::size_t operator()(const dlib::rgb_pixel& rgb) const noexcept
-        {
-            return (rgb.red << 16) | (rgb.green << 8) | rgb.blue;
-        }
-    };
-
-
-    template<typename T, long nrows, long ncols> struct hash<dlib::matrix<T, nrows, ncols>>
-    {
-        static_assert(std::is_constructible_v<std::hash<T>>, "No standard hash function defined for this type.");
-
-        std::size_t operator()(const dlib::matrix<T, nrows, ncols>& m) const noexcept
-        {
-            static std::hash<T> h;
-            return m.begin() == m.end() ? 0 : static_cast<std::size_t>(m.size()) ^ (h(m(0)) << 1) ^ h(m(m.size() - 1));
-        }
-    };
-    */
-
     template <typename T, long NR, long NC, typename MM, typename L>
     struct hash<dlib::matrix<T, NR, NC, MM, L>>
     {
