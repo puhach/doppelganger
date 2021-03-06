@@ -103,7 +103,7 @@ public:
 
 	void save(const std::string& databasePath);
 
-	//void enroll(const std::string& datasetPath, const std::string& outputPath);
+	bool enroll(const std::string& imageFile, const std::string& label);
 
 	void clear();
 

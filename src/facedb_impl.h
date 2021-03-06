@@ -140,7 +140,10 @@ std::optional<std::string> FaceDb<DescriptorComputer, DescriptorMetric>::find(co
 {
 	std::optional<Descriptor> query = this->descriptorComputer(imageFile);
 	if (!query)
+	{
+		this->reporter("Failed to compute the descriptor for " + imageFile);
 		return std::nullopt;
+	}
 
 	std::exception_ptr eptr;	// a default-constructed std::exception_ptr is a null pointer; it does not point to an exception object
 	std::atomic<bool> eflag{ false };	// exception occurrence flag
@@ -184,9 +187,41 @@ std::optional<std::string> FaceDb<DescriptorComputer, DescriptorMetric>::find(co
 		return std::nullopt;
 }	// find
 
+
+template <class DescriptorComputer, class DescriptorMetric>
+bool FaceDb<DescriptorComputer, DescriptorMetric>::enroll(const std::string& imageFile, const std::string& label)
+{
+	std::size_t labelIdx;
+	auto it = std::find(this->labels.cbegin(), this->labels.cend(), label);
+	if (it == this->labels.end())	// label not found
+	{
+		this->reporter("Enrolling a new person labeled " + label);
+		labelIdx = this->labels.size();
+		this->labels.push_back(label);
+	}
+	else	// this label already exists
+	{
+		this->reporter("Adding a new face image for " + label);
+		labelIdx = it - this->labels.cbegin();
+	}
+
+	if (auto descriptor = this->descriptorComputer(imageFile))
+	{
+		this->faceMap.emplace_back(*std::move(descriptor), labelIdx);
+		this->reporter("The descriptor for " + imageFile + " has been added to the database.");
+		return true;
+	}
+	else
+	{
+		this->reporter("Failed to compute the descriptor for the input file.");
+		return false;
+	}
+}
+
 template <class DescriptorComputer, class DescriptorMetric>
 void FaceDb<DescriptorComputer, DescriptorMetric>::clear()
 {
 	this->labels.clear();
 	this->faceMap.clear();
-}
+	this->reporter("The database has been cleared.");
+}	// clear
