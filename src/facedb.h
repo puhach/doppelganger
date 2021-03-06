@@ -68,19 +68,33 @@ public:
 		, descriptorMetric(descriptorMetric) {}
 
 
-	/*FaceDb(Reporter&& reporter = [](const std::string&) {});	
-		
-	FaceDb(const std::string& database, Reporter&& reporter = [](const std::string&) {});*/
-
-	/*template <typename Reporter = DummyReporter, typename = std::enable_if_t<std::is_invocable_v<Reporter, std::string>>>
-	FaceDb(Reporter&& reporter = Reporter())
-		: std::forward<Reporter>(reporter) {}
-
-	template <typename Reporter = DummyReporter>
-	FaceDb(const std::string& database, Reporter&& reporter = Reporter());*/
+	FaceDb(const FaceDb& other) = default;
 	
+	// TODO: test it and probably move to _impl.h file
+	FaceDb(FaceDb&& other) = default;
+	//FaceDb(FaceDb&& other) noexcept(std::is_nothrow_move_constructible_v<DescriptorComputer> // std::function's move constructor is not noexcept until C++20
+	//		&& std::is_nothrow_move_constructible_v<DescriptorMetric> && std::is_nothrow_move_constructible_v<decltype(reporter)>
+	//		&& std::is_nothrow_move_constructible_v<decltype(labels)> && std::is_nothrow_move_constructible_v<decltype(facemap)>)	
+	//	: descriptorComputer(std::move(other.descriptorComputer))
+	//	, descriptorMetric(std::move(const_cast<DescriptorMetric&>(other.descriptorMetric)))
+	//	, reporter(std::move(other.reporter))
+	//	, labels(std::move(other.labels))
+	//	, faceMap(std::move(other.faceMap)) {}
 
-	// TODO: define copy/move semantics
+	FaceDb& operator = (const FaceDb& other) = default;		// implicitly deleted due to const metric
+	FaceDb& operator = (FaceDb&& other) = default;		// implicitly deleted due to const metric
+
+	//FaceDb& operator = (FaceDb&& other)	noexcept(std::is_nothrow_move_assignable_v<DescriptorComputer>	// std::function's move constructor is not noexcept until C++20
+	//	&& std::is_nothrow_move_assignable_v<DescriptorMetric> && std::is_nothrow_move_assignable_v<decltype(reporter)> 
+	//	&& std::is_nothrow_move_assignable_v<decltype(labels)> && std::is_nothrow_move_assignable_v<decltype(faceMap)>)
+	//{
+	//	this->descriptorComputer = std::move(other.descriptorComputer);
+	//	this->descriptorMetric = std::move(const_cast<DescriptorMetric&>(other.descriptorMetric));
+	//	//this->descriptorMetric = other.descriptorMetric;	// fall back to copying
+	//	this->reporter = std::move(other.reporter);
+	//	this->labels = std::move(other.labels);
+	//	this->faceMap = std::move(other.faceMap);
+	//}
 
 	void setReporter(Reporter reporter) { this->reporter = std::move(reporter); }
 

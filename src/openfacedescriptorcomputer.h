@@ -3,28 +3,16 @@
 
 #include "facedescriptorcomputer.h"
 #include "openface.h"
-//#include "openfacedescriptor.h"
-//#include "dlibfaceextractor.h"
 #include "openfaceextractor.h"
 
 #include <tuple>
 
-//// TODO: fix paths	
-//#define SPECIALIZE_OPENFACEDESCRIPTORCOMPUTER_CTOR(alignment) \
-//	template <>	\
-//	template <>	\
-//	FaceDescriptorComputer<OpenFaceExtractor<alignment>, OpenFace>::FaceDescriptorComputer(	\
-//		const std::string &landmarkDetectionModel, const std::string& faceRecognitionModel)	\
-//		: faceExtractor(landmarkDetectionModel, OpenFace::inputSize)	\
-//		, faceRecognizer(faceRecognitionModel, false) {}	
-//
-//SPECIALIZE_OPENFACEDESCRIPTORCOMPUTER_CTOR(OpenFaceAlignment::InnerEyesAndBottomLip)
-//SPECIALIZE_OPENFACEDESCRIPTORCOMPUTER_CTOR(OpenFaceAlignment::OuterEyesAndNose)
-//
-//// TODO: 'using' can also be templated
-//// OpenFace suggests using outerEyesAndNose alignment:
-//// https://cmusatyalab.github.io/openface/visualizations/#2-preprocess-the-raw-images
-//using OpenFaceDescriptorComputer = FaceDescriptorComputer<OpenFaceExtractor<OpenFaceAlignment::OuterEyesAndNose>, OpenFace>;
+/*
+* OpenFaceDescriptorComputer is a callable object that takes in an one or more input image files, crops the face by means of the dedicated
+* OpenFaceExtractor, and computes face descriptor(s) using OpenFace model.
+*
+* This class cannot be copied, moved, or destroyed using a pointer or reference to the base class.
+*/
 
 template <OpenFaceAlignment alignment>
 class OpenFaceDescriptorComputer : public FaceDescriptorComputer<OpenFaceExtractor<alignment>, OpenFace>
@@ -32,8 +20,14 @@ class OpenFaceDescriptorComputer : public FaceDescriptorComputer<OpenFaceExtract
 public:
 	// OpenFaceExtractor requires a 68-landmark detection model
 	OpenFaceDescriptorComputer(const std::string& landmarkDetectionModel, const std::string& faceRecognitionModel)
-		: FaceDescriptorComputer::FaceDescriptorComputer(std::forward_as_tuple(landmarkDetectionModel, OpenFace::inputSize)
-														, std::forward_as_tuple(faceRecognitionModel, false)) {}
+		: OpenFaceDescriptorComputer::FaceDescriptorComputer(std::forward_as_tuple(landmarkDetectionModel, OpenFace::inputSize)
+															, std::forward_as_tuple(faceRecognitionModel, false)) {}
+
+	OpenFaceDescriptorComputer(const OpenFaceDescriptorComputer& other) = default;
+	OpenFaceDescriptorComputer(OpenFaceDescriptorComputer&& other) = default;
+
+	OpenFaceDescriptorComputer& operator = (const OpenFaceDescriptorComputer& other) = default;
+	OpenFaceDescriptorComputer& operator = (OpenFaceDescriptorComputer&& other) = default;
 };	// OpenFaceDescriptorComputer
 
 

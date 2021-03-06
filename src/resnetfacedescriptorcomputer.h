@@ -9,16 +9,11 @@
 
 
 /*
-* ResNetFaceDescriptorComputer is a default-constructible class for computing face descriptors using ResNet neural network.
-* The face is cropped from an input image by means of DlibFaceExtractor. 
+* ResNetFaceDescriptorComputer is a callable object that takes in an one or more input image files, crops the face by means of DlibFaceExtractor,
+* and computes face descriptor(s) using ResNet neural network. 
 * 
-* Private inheritance prevents slicing and accidental deletion via base class pointer. On the other hand, when subclassed
-* privately, ResNetFaceDescriptorComputer is not treated as a type of DnnFaceDescriptorComputer<ResNet, DlibFaceExtractor>, 
-* so we won't be able to pass it to a function taking a pointer/reference to DnnFaceDescriptorComputer<ResNet, DlibFaceExtractor>. 
-* Alternatively, we could define a virtual copy interface and make DnnFaceDescriptorComputer destructor virtual, but that
-* would lead to performance overhead.
+* This class cannot be copied, moved, or destroyed using a pointer or reference to the base class.
 */
-
 
 class ResNetFaceDescriptorComputer : public FaceDescriptorComputer<DlibFaceExtractor<ResNet::Input>, ResNet>
 {
@@ -27,31 +22,12 @@ public:
 		: FaceDescriptorComputer(std::forward_as_tuple(landmarkDetectionModel, ResNet::inputSize, padding)
 								, std::forward_as_tuple(faceRecognitionModel)) { }
 
-	// TODO: define copy/move semantics
+	ResNetFaceDescriptorComputer(const ResNetFaceDescriptorComputer& other) = default;
+	ResNetFaceDescriptorComputer(ResNetFaceDescriptorComputer&& other) = default;
+
+	ResNetFaceDescriptorComputer& operator = (const ResNetFaceDescriptorComputer& other) = default;
+	ResNetFaceDescriptorComputer& operator = (ResNetFaceDescriptorComputer&& other) = default;
 };	// ResNetFaceDescriptorComputer
-
-
-/*
-template <>
-template <>
-FaceDescriptorComputer<DlibFaceExtractor<ResNet::Input>, ResNet>::FaceDescriptorComputer(
-	const std::string& landmarkDetectionModel, const std::string& faceRecognitionModel)
-// TODO: fix paths
-	: faceExtractor(landmarkDetectionModel, ResNet::inputSize, 0.25)
-	, faceRecognizer(faceRecognitionModel) {}
-
-//template <>
-//template <>
-//FaceDescriptorComputer<DlibFaceExtractor<ResNet::Input>, ResNet>::FaceDescriptorComputer(
-//	const char* landmarkDetectionModel, const char* faceRecognitionModel)
-//	// TODO: fix paths
-//	: faceExtractor(landmarkDetectionModel, ResNet::inputSize, 0.25)
-//	, faceRecognizer(faceRecognitionModel) {}
-
-
-using ResNetFaceDescriptorComputer = FaceDescriptorComputer<DlibFaceExtractor<ResNet::Input>, ResNet>;
-
-*/
 
 
 
