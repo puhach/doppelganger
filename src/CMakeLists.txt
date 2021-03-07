@@ -36,7 +36,7 @@ add_executable(doppelganger
 	main.cpp 
 	facedb.h
 	resnetfacedescriptorcomputer.h
-	resnet.h	
+	resnet.h
 	resnetfacedescriptormetric.h
 	openfacedescriptorcomputer.h
 	openfaceextractor.h
@@ -47,6 +47,8 @@ add_executable(doppelganger
 	dlibmatrixdistancel2.h
 	facedescriptorcomputer.h
 	faceextractorhelper.h
+	labeldata.h
+	labeldata.cpp
 )
 
 
