@@ -77,7 +77,6 @@ public:
 
 	FaceDb(const FaceDb& other) = default;
 	
-	// TODO: test it and probably move to _impl.h file
 	FaceDb(FaceDb&& other) = default;
 	//FaceDb(FaceDb&& other) noexcept(std::is_nothrow_move_constructible_v<DescriptorComputer> // std::function's move constructor is not noexcept until C++20
 	//		&& std::is_nothrow_move_constructible_v<DescriptorMetric> && std::is_nothrow_move_constructible_v<decltype(reporter)>
@@ -115,7 +114,9 @@ public:
 
 	void clear();
 
-	std::optional<std::string> find(const std::string& filePath, double tolerance);		// non-const since it calls descriptorComputer()
+	std::pair<std::string, double> find(const std::string& filePath);		// non-const since it calls descriptorComputer()
+	//std::optional<std::pair<std::string, double>> find(const std::string& filePath, double tolerance);		// non-const since it calls descriptorComputer()
+	//std::optional<std::string> find(const std::string& filePath, double tolerance);		// non-const since it calls descriptorComputer()
 	//std::optional<std::string> find(const std::string& filePath, double tolerance) const;
 
 private:
@@ -251,15 +252,16 @@ void FaceDb<DescriptorComputer, DescriptorMetric>::save(const std::string& datab
 
 
 
-
 template <class DescriptorComputer, class DescriptorMetric>
-std::optional<std::string> FaceDb<DescriptorComputer, DescriptorMetric>::find(const std::string& imageFile, double tolerance)
+std::pair<std::string, double> FaceDb<DescriptorComputer, DescriptorMetric>::find(const std::string& imageFile)
+//std::optional<std::string> FaceDb<DescriptorComputer, DescriptorMetric>::find(const std::string& imageFile, double tolerance)
 {
+	this->reporter("Identifying the person in " + imageFile);
 	std::optional<Descriptor> query = this->descriptorComputer(imageFile);
 	if (!query)
 	{
-		this->reporter("Failed to compute the descriptor for " + imageFile);
-		return std::nullopt;
+		this->reporter("Could not compute the descriptor for " + imageFile);
+		return { "", std::numeric_limits<double>::infinity() };
 	}
 
 	std::exception_ptr eptr;	// a default-constructed std::exception_ptr is a null pointer; it does not point to an exception object
@@ -293,11 +295,57 @@ std::optional<std::string> FaceDb<DescriptorComputer, DescriptorMetric>::find(co
 	if (eptr)
 		std::rethrow_exception(eptr);
 
-	if (best.second < tolerance)
-		return this->labels.at(best.first);
-	else
-		return std::nullopt;
+	return { this->labels.at(best.first), best.second };
 }	// find
+
+//template <class DescriptorComputer, class DescriptorMetric>
+//std::optional<std::pair<std::string, double>> FaceDb<DescriptorComputer, DescriptorMetric>::find(const std::string& imageFile, double tolerance)
+////std::optional<std::string> FaceDb<DescriptorComputer, DescriptorMetric>::find(const std::string& imageFile, double tolerance)
+//{
+//	this->reporter("Trying to identify the person in " + imageFile);
+//	std::optional<Descriptor> query = this->descriptorComputer(imageFile);
+//	if (!query)
+//	{
+//		this->reporter("Could not compute the descriptor for " + imageFile);
+//		return std::nullopt;
+//	}
+//
+//	std::exception_ptr eptr;	// a default-constructed std::exception_ptr is a null pointer; it does not point to an exception object
+//	std::atomic<bool> eflag{ false };	// exception occurrence flag
+//	auto best = std::transform_reduce(std::execution::par, this->faceMap.cbegin(), this->faceMap.cend(),
+//		std::make_pair(0, std::numeric_limits<double>::infinity()),
+//		[](const std::pair<std::size_t, double>& x, const std::pair<std::size_t, double>& y) noexcept	// reduce
+//		{
+//			return x.second < y.second ? x : y;
+//		},
+//		[&query = *query, &eptr, &eflag, this](const std::pair<Descriptor, std::size_t>& p)	// transform
+//		{
+//			try
+//			{
+//				// The descriptor metric must not create a race
+//				return std::make_pair(p.second, this->descriptorMetric(p.first, query));	// may throw an exception
+//				//return std::make_pair(p.second, DescriptorMetric{ this->descriptorMetric }(p.first, query));	// may throw an exception
+//			}
+//			catch (...)
+//			{
+//				// Atomically check whether the exception flag has already been set and take care of memory consistency
+//				if (!eflag.exchange(true, std::memory_order_acq_rel))
+//					eptr = std::current_exception();
+//
+//				// std::pair does not throw exceptions unless one of the specified operations (e.g. constructor of an element) throws;
+//				// std::numeric_limits<double>::infinity() is noexcept.
+//				return std::make_pair(p.second, std::numeric_limits<double>::infinity());
+//			}
+//		});	// transform_reduce
+//
+//	if (eptr)
+//		std::rethrow_exception(eptr);
+//
+//	if (best.second < tolerance)
+//		return std::make_pair(this->labels.at(best.first), best.second);
+//	else
+//		return std::nullopt;
+//}	// find
 
 
 template <class DescriptorComputer, class DescriptorMetric>
