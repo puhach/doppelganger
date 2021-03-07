@@ -12,6 +12,7 @@
 #include <iomanip>
 #include <execution>
 #include <atomic>
+#include <typeinfo>
 
 
 /*
@@ -190,13 +191,20 @@ void FaceDb<DescriptorComputer, DescriptorMetric>::load(const std::string& datab
 		// (EOF is also included because we need all the data, not just a part of it)
 		db.exceptions(std::ifstream::badbit | std::ifstream::failbit | std::ifstream::eofbit);
 
+		// Make sure that the database was saved for the same type of descriptor computer
+		std::string descriptorComputerTypeId;
+		db >> std::quoted(descriptorComputerTypeId);
+		if (descriptorComputerTypeId != typeid(DescriptorComputer).name())
+			throw std::runtime_error("The database file was saved for another descriptor type.");
+
+		// Load labels
 		std::size_t numLabels;
 		db >> numLabels;
-
 		this->labels.resize(numLabels);
 		for (std::size_t i = 0; i < numLabels; ++i)
 			db >> std::quoted(this->labels[i]);		// read each label string removing quotes
 
+		// Load descriptors 
 		std::size_t numDescriptors = 0;
 		db >> numDescriptors;
 		this->faceMap.clear();
@@ -205,7 +213,6 @@ void FaceDb<DescriptorComputer, DescriptorMetric>::load(const std::string& datab
 		{
 			Descriptor d;		// descriptors must be default-constructible
 			std::size_t label;
-			//db >> d >> label;		// descriptors must be deserializable by means of >> operator
 			db >> label >> d;		// descriptors must be deserializable by means of >> operator
 			this->faceMap.emplace_back(std::move(d), label);	// add the descriptor and the label to the map
 		}	// i
@@ -229,13 +236,17 @@ void FaceDb<DescriptorComputer, DescriptorMetric>::save(const std::string& datab
 		std::ofstream db(databasePath, std::ios::out);
 		db.exceptions(std::ios_base::badbit | std::ios_base::failbit);
 
+		// Save the type of the descriptor computer used for computing face descriptors, so it can be checked when loading
+		db << std::quoted(typeid(DescriptorComputer).name()) << std::endl;
+
+		// Save labels
 		db << this->labels.size() << std::endl;
-		//std::copy(this->labels.begin(), this->labels.end(), std::ostream_iterator<std::string>(db, "\n"));
 		for (const auto& label : labels)
 		{
 			db << std::quoted(label) << std::endl;		// quote the labels just in case there is a space
 		}
 
+		// Save descriptors
 		db << this->faceMap.size() << std::endl;
 		for (const auto& [descriptor, label] : this->faceMap)
 		{
