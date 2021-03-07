@@ -71,20 +71,17 @@ std::vector<cv::Point> loadLandmarks(const std::string& fileName)
 	return landmarks;
 }
 
-std::string getNameFromLabel(const std::optional<std::string>& label)
+std::string getNameFromLabel(const std::string& label)
 {
-	if (!label)
-		return "Unknown";
-
 	static const auto labelMap = generateLabelMap();
 
 	try
 	{
-		return labelMap.at(*label);
+		return labelMap.at(label);
 	}
 	catch (const std::out_of_range&)
 	{
-		return *label;	// in case name lookup failed, simply return the label itself
+		return label;	// in case name lookup failed, simply return the label itself
 	}
 }	// getNameFromLabel
 
@@ -118,7 +115,7 @@ void execute(DescriptorComputer&& descriptorComputer, const std::string& databas
 	
 	if (!query.empty())		// if query is specified, try to find this person in the database
 	{
-		std::string name = getNameFromLabel(faceDb.find(query, tolerance));
+		/*std::string name = getNameFromLabel(faceDb.find(query, tolerance));
 		cv::Mat im = cv::imread(query, cv::IMREAD_COLOR);
 		int baseLine;
 		cv::Size szText = cv::getTextSize(name, cv::FONT_HERSHEY_COMPLEX, 1, 1, &baseLine);
@@ -126,8 +123,49 @@ void execute(DescriptorComputer&& descriptorComputer, const std::string& databas
 			, cv::FONT_HERSHEY_COMPLEX, 1, cv::Scalar(0, 255, 0), 1, cv::LINE_AA);
 		cv::imshow("Doppelganger", im);
 		cv::waitKey();
-		std::cout << name << std::endl;
-	}
+		std::cout << name << std::endl;*/
+
+		cv::Mat im = cv::imread(query, cv::IMREAD_COLOR);
+
+		auto drawText = [&im, thickness=1, padding=4](int bottom, const cv::String& text, cv::Scalar color, int fontFace, double fontScale)
+		{
+			int baseLine;
+			cv::Size szText = cv::getTextSize(text, fontFace, fontScale, thickness, &baseLine);
+
+			bottom -= baseLine + thickness + padding;	// adjust the bottom coordinate of the text for OpenCV
+			cv::putText(im, text, cv::Point{ (im.cols - szText.width) / 2, bottom }, fontFace, fontScale, color, thickness, cv::LINE_AA);
+			return bottom - szText.height;	// return the top coordinate of the text
+		};
+
+		int y = im.rows;	// the bottom coordinate of the text to draw
+		auto [label, similarity] = faceDb.find(query);	// find the best match
+		if (similarity <= tolerance)
+		{
+			y = drawText(y, std::to_string(similarity), cv::Scalar(0, 140, 255), cv::FONT_HERSHEY_COMPLEX_SMALL, 1);
+			drawText(y, getNameFromLabel(label), cv::Scalar(128, 128, 0), cv::FONT_HERSHEY_COMPLEX, 1);
+		}	// face identified
+		else
+		{
+			drawText(y, "Unknown", cv::Scalar(0, 0, 255), cv::FONT_HERSHEY_COMPLEX, 1);
+		}
+
+		std::cout << label << std::endl;	// TEST!
+
+		//if (auto result = faceDb.find(query, tolerance))
+		//{
+		//	auto name = getNameFromLabel(result->first);
+		//	auto similarity = std::to_string(result->second);
+		//	y = drawText(y, similarity, cv::Scalar(0,140,255), cv::FONT_HERSHEY_COMPLEX_SMALL, 1);
+		//	drawText(y, name, cv::Scalar(128,128,0), cv::FONT_HERSHEY_COMPLEX, 1);
+		//}	// face identified
+		//else
+		//{
+		//	drawText(y, "Unknown", cv::Scalar(0,0,255), cv::FONT_HERSHEY_COMPLEX, 1);
+		//}
+
+		cv::imshow("Doppelganger", im);
+		cv::waitKey();
+	}	// not an empty query
 }	// execute
 
 int main(int argc, char* argv[])
