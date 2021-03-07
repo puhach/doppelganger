@@ -5,6 +5,7 @@
 #include "resnetfacedescriptormetric.h"
 #include "openfacedescriptorcomputer.h"
 #include "openfacedescriptormetric.h"
+#include "labeldata.h"
 
 #include <iostream>
 #include <cassert>
@@ -70,6 +71,22 @@ std::vector<cv::Point> loadLandmarks(const std::string& fileName)
 	return landmarks;
 }
 
+std::string getNameFromLabel(const std::optional<std::string>& label)
+{
+	if (!label)
+		return "Unknown";
+
+	static const auto labelMap = generateLabelMap();
+
+	try
+	{
+		return labelMap.at(*label);
+	}
+	catch (const std::out_of_range&)
+	{
+		return *label;	// in case name lookup failed, simply return the label itself
+	}
+}	// getNameFromLabel
 
 template <class DescriptorComputer>
 void execute(DescriptorComputer&& descriptorComputer, const std::string& database, const std::string& cache, const std::string& query, double tolerance)
@@ -101,13 +118,15 @@ void execute(DescriptorComputer&& descriptorComputer, const std::string& databas
 	
 	if (!query.empty())		// if query is specified, try to find this person in the database
 	{
-		auto result = faceDb.find(query, tolerance);
-
-		// TODO: show the image and print the name 
-		if (result)
-			std::cout << *result << std::endl;
-		else
-			std::cout << "unknown" << std::endl;
+		std::string name = getNameFromLabel(faceDb.find(query, tolerance));
+		cv::Mat im = cv::imread(query, cv::IMREAD_COLOR);
+		int baseLine;
+		cv::Size szText = cv::getTextSize(name, cv::FONT_HERSHEY_COMPLEX, 1, 1, &baseLine);
+		cv::putText(im, name, cv::Point{ (im.cols - szText.width) / 2, (im.rows + szText.height + baseLine) / 2 }
+			, cv::FONT_HERSHEY_COMPLEX, 1, cv::Scalar(0, 255, 0), 1, cv::LINE_AA);
+		cv::imshow("Doppelganger", im);
+		cv::waitKey();
+		std::cout << name << std::endl;
 	}
 }	// execute
 
