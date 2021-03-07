@@ -28,7 +28,26 @@ public:
 
 	OpenFaceDescriptorComputer& operator = (const OpenFaceDescriptorComputer& other) = default;
 	OpenFaceDescriptorComputer& operator = (OpenFaceDescriptorComputer&& other) = default;
+    
+    //static const inline std::string typeName = "OpenFaceDescriptorComputer_" + std::to_string(static_cast<int>(alignment));
 };	// OpenFaceDescriptorComputer
 
+// namespace face_descriptor_traits
+// {
+//     template <> const std::string inline descriptorComputerTypeId<OpenFaceDescriptorComputer<OpenFaceAlignment::InnerEyesAndBottomLip>> = "OpenFaceDescriptorComputer_InnerEyesAndBottomLip";
+//     template <> const std::string inline descriptorComputerTypeId<OpenFaceDescriptorComputer<OpenFaceAlignment::OuterEyesAndNose>> = "OpenFaceDescriptorComputer_OuterEyesAndNose";
+// };
+
+template <>
+struct DescriptorComputerType<OpenFaceDescriptorComputer<OpenFaceAlignment::InnerEyesAndBottomLip>>
+{
+    static const inline std::string id = "OpenFaceDescriptorComputer_InnerEyesAndBottomLip";
+};
+
+template <>
+struct DescriptorComputerType<OpenFaceDescriptorComputer<OpenFaceAlignment::OuterEyesAndNose>>
+{
+    static const inline std::string id = "OpenFaceDescriptorComputer_OuterEyesAndNose";
+};
 
 #endif	// OPENFACEDESCRIPTORCOMPUTER_H

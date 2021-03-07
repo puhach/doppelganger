@@ -140,6 +140,19 @@ OutputIterator FaceDescriptorComputer<FaceExtractor, FaceRecognizer>::operator()
 	return outHead;
 }	// operator ()
 
+/*
+namespace face_descriptor_traits
+{
+    template <typename T> const inline std::string descriptorComputerTypeId = "FaceDescriptorComputer<FaceExtractor, FaceRecognizer>";
+};
+*/
+
+/*
+* FaceDescriptorComputer is not meant to be used directly, therefore DescriptorComputerType is only forward-declared but not defined here.
+*/
+template <typename T>
+struct DescriptorComputerType;
+
 
 
 #endif	// FACEDESCRIPTORCOMPUTER_H

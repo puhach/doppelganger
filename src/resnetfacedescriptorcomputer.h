@@ -30,6 +30,15 @@ public:
 };	// ResNetFaceDescriptorComputer
 
 
+// namespace face_descriptor_traits
+// {
+//     template <> const std::string inline descriptorComputerTypeId<ResNetFaceDescriptorComputer> = "ResNetFaceDescriptorComputer";    
+// };
 
+template <>
+struct DescriptorComputerType<ResNetFaceDescriptorComputer>
+{
+    static const inline std::string id = "ResNetFaceDescriptorComputer";
+};
 
 #endif	// RESNETFACEDESCRIPTORCOMPUTER_H

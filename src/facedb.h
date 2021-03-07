@@ -12,7 +12,6 @@
 #include <iomanip>
 #include <execution>
 #include <atomic>
-#include <typeinfo>
 
 
 /*
@@ -27,6 +26,14 @@
 */
 template <typename T>
 struct L2Distance;
+
+
+/*
+* DescriptorComputerType structure must be specialized for any descriptor computer used. It must define the id member of type string describing 
+* a particular face descriptor type.
+*/
+template <typename T>
+struct DescriptorComputerType;
 
 
 /*
@@ -194,8 +201,9 @@ void FaceDb<DescriptorComputer, DescriptorMetric>::load(const std::string& datab
 		// Make sure that the database was saved for the same type of descriptor computer
 		std::string descriptorComputerTypeId;
 		db >> std::quoted(descriptorComputerTypeId);
-		if (descriptorComputerTypeId != typeid(DescriptorComputer).name())
-			throw std::runtime_error("The database file was saved for another descriptor type.");
+// 		if (descriptorComputerTypeId != typeid(DescriptorComputer).name())
+        if (descriptorComputerTypeId != DescriptorComputerType<DescriptorComputer>::id)
+            throw std::runtime_error("The database file was saved for another descriptor type.");            
 
 		// Load labels
 		std::size_t numLabels;
@@ -237,7 +245,9 @@ void FaceDb<DescriptorComputer, DescriptorMetric>::save(const std::string& datab
 		db.exceptions(std::ios_base::badbit | std::ios_base::failbit);
 
 		// Save the type of the descriptor computer used for computing face descriptors, so it can be checked when loading
-		db << std::quoted(typeid(DescriptorComputer).name()) << std::endl;
+        db << std::quoted(DescriptorComputerType<DescriptorComputer>::id) << std::endl;
+        //db << std::type_index(typeid(DescriptorComputer)).hash_code() << std::endl;
+		//db << std::quoted(typeid(DescriptorComputer).name()) << std::endl;
 
 		// Save labels
 		db << this->labels.size() << std::endl;
