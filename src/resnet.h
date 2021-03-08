@@ -4,7 +4,6 @@
 #include <optional>
 #include <execution>
 #include <atomic>
-//#include <iostream>     // TEST!
 
 #include <dlib/dnn.h>
 #include <dlib/serialize.h>
@@ -63,16 +62,12 @@ public:
 
     using Descriptor = typename anet_type::output_label_type;
     using Input = typename anet_type::input_type;       
-    //using PixelType = typename dlib::image_traits<Input>::pixel_type;
 
-    //static constexpr unsigned long inputImageSize = 150;
     static constexpr unsigned long inputSize = 150;     // the size of an input image
 
     ResNet(const std::string& modelPath) 
     {
-        // TODO: consider just dropping the const, esp. when concurrency is disabled
-        //dlib::deserialize(modelPath) >> this->net;  // may throw
-        dlib::deserialize(modelPath) >> const_cast<anet_type&>(this->net);  // may throw
+        dlib::deserialize(modelPath) >> this->net;  // may throw
     }
 
     ResNet(const ResNet& other) = default;
@@ -81,7 +76,6 @@ public:
     ResNet& operator = (const ResNet& other) = default;
     ResNet& operator = (ResNet&& other) = default;
 
-    //std::optional<OutputLabel> operator ()(const Input& input);
     std::optional<Descriptor> operator ()(const Input& input);
 
     template <class InputIterator, class OutputIterator>
@@ -89,16 +83,14 @@ public:
 
 private:
 
-    //const anet_type net;
     anet_type net;
 };  // ResNet
 
 
-//std::optional<ResNet::OutputLabel> ResNet::operator()(const ResNet::Input& input)
 std::optional<ResNet::Descriptor> ResNet::operator()(const ResNet::Input& input)
 {        
 #ifdef PARALLEL_EXECUTION
-    // anet_type() is non-const and since we are performing inference in multiple threads, we can't modify the original network.
+    // anet_type() is non-const and since we are performing inference in multiple threads, we can't modify the original network
     auto localNet = this->net;
     return localNet(input);
 #else
@@ -156,21 +148,11 @@ OutputIterator ResNet::operator()(InputIterator inHead, InputIterator inTail, Ou
     // When parallel execution is disabled (no tbb), use batching
     this->net(inHead, inTail, outHead);
     auto batchSize = inTail - inHead;
-    //std::cout << "batch size:" << batchSize << std::endl;
     outHead += batchSize;    
 #endif  // !PARALLEL_EXECUTION
 
     return outHead;
 }   // operator ()
-
-
-//namespace network_traits
-//{
-//    // TODO: this is probably not needed anymore
-//    template <>
-//    constexpr inline unsigned long inputImageSize<ResNet> = ResNet::inputSize;
-//}
-
 
 
 #endif	// RESNET_H
