@@ -5,6 +5,8 @@
 #include <string>
 #include <filesystem>
 #include <tuple>
+#include <exception>
+
 
 /*
 * FaceDescriptorComputer defines a common interface and provides generic implementation for computing face descriptors.
@@ -37,27 +39,29 @@ public:
 	{
 		return (*this)(file.string());
 	}
-
-	// TODO: perhaps, make maxBatchSize a parameter of the class since there is no way to adjust it for derived classes
-	std::vector<std::optional<Descriptor>> operator()(const std::vector<std::string>& files, std::size_t maxBatchSize = 64)
+	
+	std::vector<std::optional<Descriptor>> operator()(const std::vector<std::string>& files)
 	{
 		std::vector<std::optional<Descriptor>> descriptors(files.size());	// may throw
-		auto tail = (*this)(files.cbegin(), files.cend(), descriptors.begin(), maxBatchSize);
+		auto tail = (*this)(files.cbegin(), files.cend(), descriptors.begin());
 		assert(descriptors.end() == tail);
 		return descriptors;
 	}
 
-	std::vector<std::optional<Descriptor>> operator()(const std::vector<std::filesystem::path>& files, std::size_t maxBatchSize = 64)
+	std::vector<std::optional<Descriptor>> operator()(const std::vector<std::filesystem::path>& files)
 	{
 		std::vector<std::optional<Descriptor>> descriptors(files.size());	// may throw
-		auto tail = (*this)(files.cbegin(), files.cend(), descriptors.begin(), maxBatchSize);
+		auto tail = (*this)(files.cbegin(), files.cend(), descriptors.begin());
 		assert(descriptors.end() == tail);
 		return descriptors;
 	}
 
 	template <class InputIterator, class OutputIterator>
-	OutputIterator operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead, std::size_t maxBatchSize);	// may throw
+	OutputIterator operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead);	// may throw
 
+    std::size_t getMaxBatchSize() const noexcept { return this->maxBatchSize; }
+    void setMaxBatchSize(std::size_t maxBatchSize) { this->maxBatchSize = maxBatchSize>0 ? maxBatchSize : throw std::invalid_argument("The batch size must be positive."); }
+    
 protected:
 
 	// Suppress copying, moving, and deletion of descendants through a pointer or reference to this class. It also prevents slicing.
@@ -75,33 +79,33 @@ protected:
 
 	FaceDescriptorComputer& operator = (const FaceDescriptorComputer & other) = default;
 	FaceDescriptorComputer& operator = (FaceDescriptorComputer && other) = default;
-
+    
 private:
 
 	FaceExtractor faceExtractor;
 	FaceRecognizer faceRecognizer;
+	std::size_t maxBatchSize = 64;
 };	// FaceDescriptorComputer
 
 
 
 template <class FaceExtractor, class FaceRecognizer>
 template <class InputIterator, class OutputIterator>
-OutputIterator FaceDescriptorComputer<FaceExtractor, FaceRecognizer>::operator()(InputIterator inHead, InputIterator inTail
-	, OutputIterator outHead, std::size_t maxBatchSize)
+OutputIterator FaceDescriptorComputer<FaceExtractor, FaceRecognizer>::operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead)
 {
-	assert(maxBatchSize > 0);
+	//assert(maxBatchSize > 0);
 	assert(inTail >= inHead);
 
-	std::vector<std::optional<typename FaceExtractor::Output>> faces(maxBatchSize);
+	std::vector<std::optional<typename FaceExtractor::Output>> faces(this->maxBatchSize);
 	//std::vector<std::optional<Descriptor>> descriptors(inputs.size());
-	std::vector<typename FaceExtractor::Output> inBatch(maxBatchSize);
+	std::vector<typename FaceExtractor::Output> inBatch(this->maxBatchSize);
 	//std::vector<Descriptor> outBatch(maxBatchSize);
-	std::vector<std::optional<Descriptor>> outBatch(maxBatchSize);
-	std::vector<std::size_t> pos(maxBatchSize);	// idices of corresponding items: faces -> batchIn/batchOut
+	std::vector<std::optional<Descriptor>> outBatch(this->maxBatchSize);
+	std::vector<std::size_t> pos(this->maxBatchSize);	// idices of corresponding items: faces -> batchIn/batchOut
 
 	for (InputIterator batchTail; inHead < inTail; inHead = batchTail)
 	{
-		auto batchSize = std::min(maxBatchSize, static_cast<std::size_t>(inTail - inHead));
+		auto batchSize = std::min(this->maxBatchSize, static_cast<std::size_t>(inTail - inHead));
 		batchTail = inHead + batchSize;
 
 		faces.resize(batchSize);
