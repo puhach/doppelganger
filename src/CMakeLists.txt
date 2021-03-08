@@ -21,7 +21,9 @@ set(OpenCV_DIR /opt/opencv/4.5.1/installation/lib/cmake/opencv4)
 
 
 option(PARALLEL_EXECUTION "Use multiple threads for faster processing" ON)
-
+option(COPY_MODELS "Automatically copy model files to the target directory" ON)
+option(COPY_DATASET "Automatically copy the dataset to the target directory" ON)
+option(COPY_TEST_DATA "Automatically copy test files to the target directory" ON)
 
 if(MSVC)
 	SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
@@ -53,10 +55,11 @@ add_executable(doppelganger
 )
 
 
-# GCC requires tbb to be linked in order to use execution policies
 set(LINK_LIBS ${OpenCV_LIBS} dlib::dlib)
 if (PARALLEL_EXECUTION)
-    target_compile_definitions(doppelganger PUBLIC PARALLEL_EXECUTION=1)
+    target_compile_definitions(doppelganger PUBLIC PARALLEL_EXECUTION)
+    
+    # GCC requires tbb to be linked in order to use execution policies
     if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")    
         list(APPEND LINK_LIBS tbb)
     endif()
@@ -69,28 +72,32 @@ target_link_libraries(doppelganger ${LINK_LIBS})
 
 		
 	
-# TODO: Copy Dlib models to the output directory
-#[[
-add_custom_command(TARGET doppelganger
+# Copy models to the output directory
+if (COPY_MODELS)
+    add_custom_command(TARGET doppelganger
                      POST_BUILD
-                     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                     "${PROJECT_SOURCE_DIR}/../models/*"
-                     "$<TARGET_FILE_DIR:doppelganger>")
-]]
+                     #COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                     #"${PROJECT_SOURCE_DIR}/../models/*"
+                     COMMAND ${CMAKE_COMMAND} -E copy_directory
+                     "${PROJECT_SOURCE_DIR}/../models"
+                     "$<TARGET_FILE_DIR:doppelganger>/models")
+endif()
 
-# TODO: Copy celeba mini dataset to the output directory
-#[[
-add_custom_command(TARGET doppelganger
+# Copy celeba mini dataset to the output directory
+if (COPY_DATASET)
+    add_custom_command(TARGET doppelganger
                    POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy_directory
                    "${PROJECT_SOURCE_DIR}/../dataset"
                    "$<TARGET_FILE_DIR:doppelganger>/dataset")
-]]
+endif()
+
 	
 # Copy test image files to the output directory
-add_custom_command(TARGET doppelganger
+if (COPY_TEST_DATA)
+    add_custom_command(TARGET doppelganger
                    POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy_directory
                    "${PROJECT_SOURCE_DIR}/../test"
                    "$<TARGET_FILE_DIR:doppelganger>/test")
-
+endif()
