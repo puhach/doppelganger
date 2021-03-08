@@ -17,6 +17,11 @@
 #include <iostream>     // TEST!
 
 
+/*
+* FaceExtractorHelper is an auxiliary class for face extraction. It implements functions commonly used by face extractors. 
+* This class cannot be instantiated directly.
+*/
+
 //template <class OutputImage, class ExtractFaceCallback>
 template <class OutputImage>
 class FaceExtractorHelper

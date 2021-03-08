@@ -11,6 +11,11 @@
 #include <dlib/image_processing/generic_image.h>	
 
 
+/*
+* ResNet is a callable object which computes face embeddings (descriptors) by means of the ResNet model implemented in Dlib.
+* It takes in an image or a range of images and outputs face descriptors wrapped into std::optional<T>, which can be std::nullopt in 
+* case of a failure. 
+*/
 
 class ResNet
 {

@@ -9,7 +9,7 @@
 
 
 /*
-* OpenFace implements a callable object to perform face recognition by means of OpenFace model. 
+* OpenFace implements a callable object to perform face recognition by means of the OpenFace model. 
 * It takes in an image or a range of images and outputs face descriptors wrapped into std::optional<T>, which can be std::nullopt in 
 * case of a failure. 
 */

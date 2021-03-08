@@ -14,6 +14,10 @@
 #include <dlib/image_transforms.h>
 
 
+/*
+* DlibFaceExtractor detects, crops, and aligns a face in the input image by means of standard Dlib functions. 
+*/
+
 //template <typename PixelType>
 //class DlibFaceExtractor : FaceExtractorHelper<dlib::matrix<PixelType>>
 template <class Image>

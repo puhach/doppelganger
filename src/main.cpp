@@ -243,14 +243,18 @@ int main(int argc, char* argv[])
 		std::transform(algorithm.cbegin(), algorithm.cend(), algorithm.begin(), static_cast<int (*)(int)>(&std::tolower));
 		if (algorithm == "resnet")
 		{			
-			ResNetFaceDescriptorComputer descriptorComputer{ "./shape_predictor_5_face_landmarks.dat", "./dlib_face_recognition_resnet_model_v1.dat" };
+			//ResNetFaceDescriptorComputer descriptorComputer{ "./shape_predictor_5_face_landmarks.dat", "./dlib_face_recognition_resnet_model_v1.dat" };
+            ResNetFaceDescriptorComputer descriptorComputer{ "./models/shape_predictor_5_face_landmarks.dat"
+                                                            , "./models/dlib_face_recognition_resnet_model_v1.dat" };
 			execute(std::move(descriptorComputer), db, cache, query, tolerance);
 		}
 		else if (algorithm == "openface")
 		{
 			// OpenFace suggests using outerEyesAndNose alignment:
 			// https://cmusatyalab.github.io/openface/visualizations/#2-preprocess-the-raw-images
-			OpenFaceDescriptorComputer<OpenFaceAlignment::OuterEyesAndNose> descriptorComputer{ "./shape_predictor_68_face_landmarks.dat",  "./nn4.v2.t7" };
+            OpenFaceDescriptorComputer<OpenFaceAlignment::OuterEyesAndNose> descriptorComputer{ "./models/shape_predictor_68_face_landmarks.dat"
+                                                                                            ,  "./models/nn4.v2.t7" };
+			//OpenFaceDescriptorComputer<OpenFaceAlignment::OuterEyesAndNose> descriptorComputer{ "./shape_predictor_68_face_landmarks.dat",  "./nn4.v2.t7" };
 			execute(std::move(descriptorComputer), db, cache, query, tolerance);
 		}
 		else throw std::invalid_argument("Unsupported algorithm: " + algorithm);

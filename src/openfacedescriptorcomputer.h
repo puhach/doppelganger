@@ -7,6 +7,7 @@
 
 #include <tuple>
 
+
 /*
 * OpenFaceDescriptorComputer is a callable object that takes in an one or more input image files, crops the face by means of the dedicated
 * OpenFaceExtractor, and computes face descriptor(s) using OpenFace model.

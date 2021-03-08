@@ -19,13 +19,21 @@
 
 
 
-
+/*
+* OpenFace preprocessing can be configured for different image alignment.
+*/
 enum class OpenFaceAlignment
 {
     InnerEyesAndBottomLip,
     OuterEyesAndNose
 };
 
+
+/*
+* OpenFaceExtractor crops a face detected in an input image and prepares it for face recognition by means of the OpenFace model.
+* https://cmusatyalab.github.io/openface/visualizations/#2-preprocess-the-raw-images
+* https://github.com/cmusatyalab/openface/blob/master/openface/align_dlib.py
+*/
 
 template <OpenFaceAlignment alignment>
 class OpenFaceExtractor : FaceExtractorHelper<cv::Mat>
