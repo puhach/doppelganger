@@ -38,6 +38,7 @@ public:
 		return (*this)(file.string());
 	}
 
+	// TODO: perhaps, make maxBatchSize a parameter of the class since there is no way to adjust it for derived classes
 	std::vector<std::optional<Descriptor>> operator()(const std::vector<std::string>& files, std::size_t maxBatchSize = 64)
 	{
 		std::vector<std::optional<Descriptor>> descriptors(files.size());	// may throw

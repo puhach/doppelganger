@@ -4,6 +4,7 @@
 #include <optional>
 #include <execution>
 #include <atomic>
+//#include <iostream>     // TEST!
 
 #include <dlib/dnn.h>
 #include <dlib/serialize.h>
@@ -90,25 +91,29 @@ private:
 
 //std::optional<ResNet::OutputLabel> ResNet::operator()(const ResNet::Input& input)
 std::optional<ResNet::Descriptor> ResNet::operator()(const ResNet::Input& input)
-{
+{        
+#ifdef PARALLEL_EXECUTION
     // anet_type() is non-const and since we are performing inference in multiple threads, we can't modify the original network.
-    // TODO: this extra copy can possibly be avoided when concurrency is disabled
     auto localNet = this->net;
     return localNet(input);
-}
+#else
+    // we don't need to copy the original network when concurrency is disabled    
+    return this->net(input);
+#endif
+}   // operator()
 
 template <class InputIterator, class OutputIterator>
 OutputIterator ResNet::operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead)
 {
    
-
+#ifdef PARALLEL_EXECUTION
+    
     // Dlib's batching for face recognition is not really efficient:
     // https://github.com/davisking/dlib/issues/1159
 
     std::atomic_flag eflag{ false };
     std::exception_ptr eptr;
-    outHead = std::transform(std::execution::par, inHead, inTail, outHead, 
-        //[this, &eflag, &eptr](const Input& input) -> std::optional<ResNet::OutputLabel> // ResNet::OutputLabel
+    outHead = std::transform(std::execution::par, inHead, inTail, outHead,         
         [this, &eflag, &eptr](const Input& input) -> std::optional<ResNet::Descriptor> 
         {
             try
@@ -142,11 +147,13 @@ OutputIterator ResNet::operator()(InputIterator inHead, InputIterator inTail, Ou
     if (eptr)
         std::rethrow_exception(eptr);
 
-    // TODO: when parallel execution is disabled (no tbb), use batching
-    /*net(inHead, inTail, outHead);
+#else
+    // When parallel execution is disabled (no tbb), use batching
+    this->net(inHead, inTail, outHead);
     auto batchSize = inTail - inHead;
-    outHead += batchSize;
-    return outHead;*/
+    //std::cout << "batch size:" << batchSize << std::endl;
+    outHead += batchSize;    
+#endif  // !PARALLEL_EXECUTION
 
     return outHead;
 }   // operator ()

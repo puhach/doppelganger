@@ -12,6 +12,7 @@
 #include <iomanip>
 #include <execution>
 #include <atomic>
+#include <iostream> // TEST!
 
 
 /*
@@ -285,9 +286,18 @@ std::pair<std::string, double> FaceDb<DescriptorComputer, DescriptorMetric>::fin
 		return { "", std::numeric_limits<double>::infinity() };
 	}
 
+#ifdef PARALLEL_EXECUTION
+    const auto &executionPolicy = std::execution::par;
+    std::cout << "Parallel seach" << std::endl;   // TEST!
+#else
+    const auto &executionPolicy = std::execution::seq;
+    std::cout << "Sequential seach" << std::endl;   // TEST!
+#endif
+	
 	std::exception_ptr eptr;	// a default-constructed std::exception_ptr is a null pointer; it does not point to an exception object
 	std::atomic<bool> eflag{ false };	// exception occurrence flag
-	auto best = std::transform_reduce(std::execution::par, this->faceMap.cbegin(), this->faceMap.cend(),
+	auto best = std::transform_reduce(executionPolicy, this->faceMap.cbegin(), this->faceMap.cend(),
+	//auto best = std::transform_reduce(std::execution::par, this->faceMap.cbegin(), this->faceMap.cend(),
 		std::make_pair(0, std::numeric_limits<double>::infinity()),
 		[](const std::pair<std::size_t, double>& x, const std::pair<std::size_t, double>& y) noexcept	// reduce
 		{

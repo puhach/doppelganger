@@ -237,6 +237,9 @@ int main(int argc, char* argv[])
 			return -1;
 		}
 
+		// TEST!
+		auto t = std::chrono::steady_clock::now();
+		
 		std::transform(algorithm.cbegin(), algorithm.cend(), algorithm.begin(), static_cast<int (*)(int)>(&std::tolower));
 		if (algorithm == "resnet")
 		{			
@@ -251,6 +254,9 @@ int main(int argc, char* argv[])
 			execute(std::move(descriptorComputer), db, cache, query, tolerance);
 		}
 		else throw std::invalid_argument("Unsupported algorithm: " + algorithm);
+        
+        auto elapsed = std::chrono::steady_clock::now() - t;
+        std::cout << "elapsed: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count() << std::endl;
 	}	// try
 	catch (const dlib::cuda_error& e)
 	{

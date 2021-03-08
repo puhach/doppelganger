@@ -20,6 +20,7 @@ set(OpenCV_DIR /opt/opencv/4.5.1/installation/lib/cmake/opencv4)
 ##############################################################
 
 
+option(PARALLEL_EXECUTION "Use multiple threads for faster processing" ON)
 
 
 if(MSVC)
@@ -54,9 +55,12 @@ add_executable(doppelganger
 
 # GCC requires tbb to be linked in order to use execution policies
 set(LINK_LIBS ${OpenCV_LIBS} dlib::dlib)
-if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")    
-    list(APPEND LINK_LIBS tbb)
-endif()
+if (PARALLEL_EXECUTION)
+    target_compile_definitions(doppelganger PUBLIC PARALLEL_EXECUTION=1)
+    if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")    
+        list(APPEND LINK_LIBS tbb)
+    endif()
+endif(PARALLEL_EXECUTION)
 
 #message(${LINK_LIBS})
 target_link_libraries(doppelganger ${LINK_LIBS})

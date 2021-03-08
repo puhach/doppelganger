@@ -14,6 +14,8 @@
 #include <dlib/image_processing/frontal_face_detector.h>
 #include <dlib/image_processing/shape_predictor.h>
 
+#include <iostream>     // TEST!
+
 
 //template <class OutputImage, class ExtractFaceCallback>
 template <class OutputImage>
@@ -138,10 +140,17 @@ OutputIterator FaceExtractorHelper<OutputImage>::operator()(InputIterator inHead
 {
     assert(inHead <= inTail);
 
+#ifdef PARALLEL_EXECUTION
+    const auto& executionPolicy = std::execution::par;
+    std::cout << "Parallel extraction" << std::endl;    // TEST!
+#else
+    const auto& executionPolicy = std::execution::seq;
+    std::cout << "Sequential extraction" << std::endl;  // TEST!
+#endif  // !PARALLEL_EXECUTION
     std::atomic_flag eflag{ false };
     std::exception_ptr eptr;
-    outHead = std::transform(std::execution::par, inHead, inTail, outHead,
-    //outHead = std::transform(std::execution::seq, inHead, inTail, outHead,      // TEST!
+    outHead = std::transform(executionPolicy, inHead, inTail, outHead,    
+    //outHead = std::transform(std::execution::par, inHead, inTail, outHead,    
         [this, &eflag, &eptr](const auto& filePath) -> std::optional<Output>
         {
             try
