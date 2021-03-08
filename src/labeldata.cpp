@@ -1,15 +1,8 @@
-// label data
-// labelData.cpp
-//#include <iostream>
 #include "labeldata.h"
 
-/// Label -> Name Mapping file
-//typedef std::map<string, string> Dict;
-
-//const Dict& generateLabelMap()
 Dict generateLabelMap()
 {
-	// Add key-value pairs in the map
+	// Create a map of labels and corresponding names
 	return {		
 		{"n00000001" , "A.J. Buckley"},
 		{"n00000002" , "A.R. Rahman"},

@@ -8,8 +8,6 @@
 #include <execution>	
 #include <atomic>
 
-//#include <dlib/matrix.h>
-//#include <dlib/pixel.h>
 #include <dlib/image_io.h>
 #include <dlib/image_transforms.h>
 
@@ -18,20 +16,13 @@
 * DlibFaceExtractor detects, crops, and aligns a face in the input image by means of standard Dlib functions. 
 */
 
-//template <typename PixelType>
-//class DlibFaceExtractor : FaceExtractorHelper<dlib::matrix<PixelType>>
 template <class Image>
 class DlibFaceExtractor : FaceExtractorHelper<Image>
 {
-	//static_assert(std::is_invocable_v<decltype(dlib::load_image<Image>), Image, std::string>, "The specified image type is not supported by Dlib.");
 	using typename DlibFaceExtractor::FaceExtractorHelper::ExtractFaceCallback;
 public:
 
 	using typename DlibFaceExtractor::FaceExtractorHelper::Output;
-	//using typename FaceExtractorHelper::Output;
-	//using FaceExtractorHelper<dlib::matrix<PixelType>>::Output;
-	//using Output = typename FaceExtractorHelper<dlib::matrix<PixelType>>::Output;
-	//typedef std::optional<Output>(FaceExtractorHelper<Image>::*ExtractorCallback)(const std::string& filePath);
 
 	// DlibFaceExtractor works with both 5 and 68 landmark detection models
 	DlibFaceExtractor(const std::string& landmarkDetectionModel, unsigned long size, double padding = 0.2)
@@ -59,8 +50,6 @@ public:
 private:
 
 	std::optional<Output> extractFace(const std::string& filePath);
-	//std::optional<typename Output> extractFace(const std::string& filePath);
-	//std::optional<typename DlibFaceExtractor<PixelType>::Output> extractFace(const std::string& filePath);
 
 	unsigned long size;
 	double padding;

@@ -31,13 +31,11 @@ public:
 	{
 		std::optional<typename FaceExtractor::Output> face = this->faceExtractor(file);
 		return face ? this->faceRecognizer(*std::move(face)) : std::nullopt;
-		//return face ? this->faceRecognizer(*face) : std::nullopt;
 	}
-
-	// std::filesystem::path::string may throw implementation-defined exceptions
+		
 	std::optional<Descriptor> operator()(const std::filesystem::path& file) 
-	{
-		return (*this)(file.string());
+	{	
+		return (*this)(file.string());	// std::filesystem::path::string may throw implementation-defined exceptions
 	}
 	
 	std::vector<std::optional<Descriptor>> operator()(const std::vector<std::string>& files)
@@ -60,7 +58,11 @@ public:
 	OutputIterator operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead);	// may throw
 
     std::size_t getMaxBatchSize() const noexcept { return this->maxBatchSize; }
-    void setMaxBatchSize(std::size_t maxBatchSize) { this->maxBatchSize = maxBatchSize>0 ? maxBatchSize : throw std::invalid_argument("The batch size must be positive."); }
+    
+	void setMaxBatchSize(std::size_t maxBatchSize) 
+	{ 
+		this->maxBatchSize = maxBatchSize>0 ? maxBatchSize : throw std::invalid_argument("The batch size must be positive."); 
+	}
     
 protected:
 
@@ -97,9 +99,7 @@ OutputIterator FaceDescriptorComputer<FaceExtractor, FaceRecognizer>::operator()
 	assert(inTail >= inHead);
 
 	std::vector<std::optional<typename FaceExtractor::Output>> faces(this->maxBatchSize);
-	//std::vector<std::optional<Descriptor>> descriptors(inputs.size());
 	std::vector<typename FaceExtractor::Output> inBatch(this->maxBatchSize);
-	//std::vector<Descriptor> outBatch(maxBatchSize);
 	std::vector<std::optional<Descriptor>> outBatch(this->maxBatchSize);
 	std::vector<std::size_t> pos(this->maxBatchSize);	// idices of corresponding items: faces -> batchIn/batchOut
 
@@ -121,7 +121,6 @@ OutputIterator FaceDescriptorComputer<FaceExtractor, FaceRecognizer>::operator()
 
 			if (faces[i])
 			{
-				//inBatch.push_back(*faces[i]);
 				inBatch.push_back(*std::move(faces[i]));	// a moved-from optional still contains a value, but the value itself is moved from
 				++j;
 			}
@@ -145,12 +144,6 @@ OutputIterator FaceDescriptorComputer<FaceExtractor, FaceRecognizer>::operator()
 	return outHead;
 }	// operator ()
 
-/*
-namespace face_descriptor_traits
-{
-    template <typename T> const inline std::string descriptorComputerTypeId = "FaceDescriptorComputer<FaceExtractor, FaceRecognizer>";
-};
-*/
 
 /*
 * FaceDescriptorComputer is not meant to be used directly, therefore DescriptorComputerType is only forward-declared but not defined here.

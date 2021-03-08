@@ -44,7 +44,6 @@ public:
 
     // OpenFaceExtractor expects a path to 68 landmark detection model 
     OpenFaceExtractor(const std::string& landmarkDetectionModel, unsigned long size)
-        //: FaceExtractorHelper(landmarkDetectionModel, [this](const std::string& filePath) { return extractFace(filePath); })
         : FaceExtractorHelper(landmarkDetectionModel, static_cast<ExtractFaceCallback>(&OpenFaceExtractor::extractFace))
         , size(size > 0 ? size : throw std::invalid_argument("Image size cannot be zero.")) {}
 

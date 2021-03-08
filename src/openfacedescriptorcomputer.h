@@ -29,15 +29,13 @@ public:
 
 	OpenFaceDescriptorComputer& operator = (const OpenFaceDescriptorComputer& other) = default;
 	OpenFaceDescriptorComputer& operator = (OpenFaceDescriptorComputer&& other) = default;
-    
-    //static const inline std::string typeName = "OpenFaceDescriptorComputer_" + std::to_string(static_cast<int>(alignment));
 };	// OpenFaceDescriptorComputer
 
-// namespace face_descriptor_traits
-// {
-//     template <> const std::string inline descriptorComputerTypeId<OpenFaceDescriptorComputer<OpenFaceAlignment::InnerEyesAndBottomLip>> = "OpenFaceDescriptorComputer_InnerEyesAndBottomLip";
-//     template <> const std::string inline descriptorComputerTypeId<OpenFaceDescriptorComputer<OpenFaceAlignment::OuterEyesAndNose>> = "OpenFaceDescriptorComputer_OuterEyesAndNose";
-// };
+
+
+/*
+* The following DescriptorComputerType specializations define the string IDs for the type OpenFaceDescriptorComputer.
+*/
 
 template <>
 struct DescriptorComputerType<OpenFaceDescriptorComputer<OpenFaceAlignment::InnerEyesAndBottomLip>>

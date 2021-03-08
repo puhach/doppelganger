@@ -30,11 +30,9 @@ public:
 };	// ResNetFaceDescriptorComputer
 
 
-// namespace face_descriptor_traits
-// {
-//     template <> const std::string inline descriptorComputerTypeId<ResNetFaceDescriptorComputer> = "ResNetFaceDescriptorComputer";    
-// };
-
+/*
+* DescriptorComputerType specialization defines the string ID for the type ResNetFaceDescriptorComputer.
+*/
 template <>
 struct DescriptorComputerType<ResNetFaceDescriptorComputer>
 {

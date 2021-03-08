@@ -1,4 +1,3 @@
-//#include "openfacedescriptor.h"
 #include "openface.h"
 
 #include <opencv2/core.hpp>
@@ -6,22 +5,11 @@
 
 
 
-//OpenFace& OpenFace::operator = (const OpenFace& other)
-//{
-//	this->modelPath = other.modelPath;
-//	this->net = cv::dnn::readNetFromTorch(modelPath);	// there seems to be no other way to make a deep copy of cv::dnn::Net
-//	return *this;
-//}
-
-//std::optional<OpenFace::OutputLabel> OpenFace::operator()(const cv::Mat& input)
-//std::optional<OpenFace::OutputLabel> OpenFace::operator()(const Input& input)
 std::optional<OpenFace::Descriptor> OpenFace::operator()(const Input& input)
 {
 	CV_Assert(!input.empty());
 	CV_Assert(input.type() == CV_32FC3 || input.type() == CV_8UC3);
 
-	/// TODO: the scale factor must be consistent with a batch version
-	//double scaleFactor = input.type() == CV_32FC3 ? 1.0 : 1 / 255.0;
 	auto blob = cv::dnn::blobFromImage(input, 1 / 255.0, cv::Size(inputSize, inputSize), cv::Scalar(0, 0, 0), this->swapRB, false, CV_32F);
 	net.setInput(blob);	
 	return net.forward().clone();	// it seems like a non-owning Mat is returned
@@ -66,7 +54,6 @@ std::ostream& operator << (std::ostream& stream, const OpenFace::Descriptor& des
 
 	for (int i = 0; i < m.cols; ++i)
 	{
-		//stream << m.at<double>(i) << std::endl;
 		stream << m.at<float>(0, i) << std::endl;
 	}
 
