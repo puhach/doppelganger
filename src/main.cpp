@@ -63,10 +63,10 @@ void execute(DescriptorComputer&& descriptorComputer, const std::string& databas
 		};
 
 		int y = im.rows;	// the bottom coordinate of the text to draw
-		auto [label, similarity] = faceDb.find(query);	// find the best match
-		if (similarity <= tolerance)
+		auto [label, dissimilarity] = faceDb.find(query);	// find the best match
+		if (dissimilarity <= tolerance)
 		{
-			y = drawText(y, std::to_string(similarity), cv::Scalar(0, 140, 255), cv::FONT_HERSHEY_COMPLEX_SMALL, 1);
+			y = drawText(y, std::to_string(dissimilarity), cv::Scalar(0, 140, 255), cv::FONT_HERSHEY_COMPLEX_SMALL, 1);
 			drawText(y, getNameFromLabel(label), cv::Scalar(139, 200, 0), cv::FONT_HERSHEY_COMPLEX, 1);
 		}	// face identified
 		else
