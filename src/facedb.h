@@ -179,8 +179,8 @@ void FaceDb<DescriptorComputer, DescriptorMetric>::load(const std::string& datab
 		// Make sure that the database was saved for the same type of descriptor computer
 		std::string descriptorComputerTypeId;
 		db >> std::quoted(descriptorComputerTypeId);
-        if (descriptorComputerTypeId != DescriptorComputerType<DescriptorComputer>::id)
-            throw std::runtime_error("The database file was saved for another descriptor type.");            
+		if (descriptorComputerTypeId != DescriptorComputerType<DescriptorComputer>::id)
+			throw std::runtime_error("The database file was saved for another descriptor type.");            
 
 		// Load labels
 		std::size_t numLabels;
@@ -222,7 +222,7 @@ void FaceDb<DescriptorComputer, DescriptorMetric>::save(const std::string& datab
 		db.exceptions(std::ios_base::badbit | std::ios_base::failbit);
 
 		// Save the type of the descriptor computer used for computing face descriptors, so it can be checked when loading
-        db << std::quoted(DescriptorComputerType<DescriptorComputer>::id) << std::endl;
+		db << std::quoted(DescriptorComputerType<DescriptorComputer>::id) << std::endl;
 
 		// Save labels
 		db << this->labels.size() << std::endl;
@@ -262,7 +262,7 @@ std::pair<std::string, double> FaceDb<DescriptorComputer, DescriptorMetric>::fin
 #ifdef PARALLEL_EXECUTION
 	const auto &executionPolicy = std::execution::par;
 #else
-    const auto &executionPolicy = std::execution::seq;
+	const auto &executionPolicy = std::execution::seq;
 #endif
 	
 	std::exception_ptr eptr;	// a default-constructed std::exception_ptr is a null pointer; it does not point to an exception object

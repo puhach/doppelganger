@@ -21,7 +21,6 @@
 * This class cannot be instantiated directly.
 */
 
-//template <class OutputImage, class ExtractFaceCallback>
 template <class OutputImage>
 class FaceExtractorHelper
 {

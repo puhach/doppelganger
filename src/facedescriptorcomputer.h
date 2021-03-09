@@ -57,7 +57,7 @@ public:
 	template <class InputIterator, class OutputIterator>
 	OutputIterator operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead);	// may throw
 
-    std::size_t getMaxBatchSize() const noexcept { return this->maxBatchSize; }
+	std::size_t getMaxBatchSize() const noexcept { return this->maxBatchSize; }
     
 	void setMaxBatchSize(std::size_t maxBatchSize) 
 	{ 
@@ -95,7 +95,6 @@ template <class FaceExtractor, class FaceRecognizer>
 template <class InputIterator, class OutputIterator>
 OutputIterator FaceDescriptorComputer<FaceExtractor, FaceRecognizer>::operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead)
 {
-	//assert(maxBatchSize > 0);
 	assert(inTail >= inHead);
 
 	std::vector<std::optional<typename FaceExtractor::Output>> faces(this->maxBatchSize);
