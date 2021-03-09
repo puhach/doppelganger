@@ -76,7 +76,7 @@ public:
     ResNet& operator = (const ResNet& other) = default;
     ResNet& operator = (ResNet&& other) = default;
 
-    std::optional<Descriptor> operator ()(const Input& input);
+    std::optional<Descriptor> operator ()(const Input& input) { return this->net(input); }
 
     template <class InputIterator, class OutputIterator>
     OutputIterator operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead);
@@ -86,18 +86,6 @@ private:
     anet_type net;
 };  // ResNet
 
-
-std::optional<ResNet::Descriptor> ResNet::operator()(const ResNet::Input& input)
-{        
-#ifdef PARALLEL_EXECUTION
-    // anet_type() is non-const and since we are performing inference in multiple threads, we can't modify the original network
-    auto localNet = this->net;
-    return localNet(input);
-#else
-    // we don't need to copy the original network when concurrency is disabled    
-    return this->net(input);
-#endif
-}   // operator()
 
 template <class InputIterator, class OutputIterator>
 OutputIterator ResNet::operator()(InputIterator inHead, InputIterator inTail, OutputIterator outHead)
@@ -120,7 +108,7 @@ OutputIterator ResNet::operator()(InputIterator inHead, InputIterator inTail, Ou
                 // sure that there is no data race. Using thread_local variables is not an option in this case as they are shared 
                 // among all instances of the class, while we want to perform inference by means of the network from this particular 
                 // instance. That's why we are making a local copy of the network every time before using it. It may seem inefficient, 
-                // but it fact it almost has no impact on the overall processing time. That is for two reasons:        
+                // but in fact it almost has no impact on the overall processing time. That is for two reasons:        
                 // 1) the time to copy the network is small as compared to the inference time 
                 // 2) other threads can pick up the slack while we are waiting for a copy
 
