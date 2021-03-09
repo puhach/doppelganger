@@ -18,7 +18,6 @@ class FaceDescriptorComputer
 {
 public:
 
-	//using Descriptor = typename FaceRecognizer::OutputLabel;
 	using Descriptor = typename FaceRecognizer::Descriptor;
 
 
@@ -104,13 +103,16 @@ OutputIterator FaceDescriptorComputer<FaceExtractor, FaceRecognizer>::operator()
 
 	for (InputIterator batchTail; inHead < inTail; inHead = batchTail)
 	{
+		// Make sure that the batch boundaries never exceed the range of the input sequence
 		auto batchSize = std::min(this->maxBatchSize, static_cast<std::size_t>(inTail - inHead));
 		batchTail = inHead + batchSize;
 
+		// Preprocess input images and extract faces
 		faces.resize(batchSize);
 		this->faceExtractor(inHead, batchTail, faces.begin());
 
-
+		// Select successfully extracted faces to prepare an input batch for face recognition. For each input file keep the corresponding
+		// position of a face in the input batch (which is the same as the position of a face descriptor in the output batch).
 		assert(faces.size() == batchSize);
 		inBatch.clear();
 		pos.clear();
@@ -125,11 +127,12 @@ OutputIterator FaceDescriptorComputer<FaceExtractor, FaceRecognizer>::operator()
 			}
 		}	// for i
 
-
+		// Recognize the faces
 		outBatch.resize(inBatch.size());
 		auto outBatchTail = this->faceRecognizer(inBatch.cbegin(), inBatch.cend(), outBatch.begin());
 		assert(outBatchTail == outBatch.end());
 
+		// Arrange the computed face descriptors according to the input files
 		outHead = std::transform(faces.cbegin(), faces.cend(), pos.cbegin(), outHead,
 			[&outBatch](const std::optional<typename FaceExtractor::Output>& face, std::size_t idx) -> std::optional<Descriptor>
 			{

@@ -84,7 +84,7 @@ OutputIterator OpenFace::operator()(InputIterator inHead, InputIterator inTail, 
 		return outHead;
 
 	auto inBlob = cv::dnn::blobFromImages(std::vector<cv::Mat>(inHead, inTail), 1 / 255.0, cv::Size(inputSize, inputSize)
-		, cv::Scalar(0, 0, 0), this->swapRB, false, CV_32F);
+										, cv::Scalar(0, 0, 0), this->swapRB, false, CV_32F);
 	net.setInput(inBlob);
 	auto outBlob = net.forward();
 

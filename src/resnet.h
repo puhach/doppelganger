@@ -138,7 +138,6 @@ OutputIterator ResNet::operator()(InputIterator inHead, InputIterator inTail, Ou
             }   // catch
 
             return std::nullopt;
-            //return ResNet::OutputLabel();
         });     // transform
 
     if (eptr)
