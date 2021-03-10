@@ -19,11 +19,6 @@ The project has the following directory structure:
 ├───dlib
 │               
 ├───models
-│       dlib_face_recognition_resnet_model_v1.dat
-│       nn4.small2.v1.t7
-│       nn4.v2.t7
-│       shape_predictor_5_face_landmarks.dat
-│       shape_predictor_68_face_landmarks.dat
 │       
 ├───src
 │   │   .gitignore
@@ -94,4 +89,27 @@ The project was tested on a subset of the Celebrity Together Dataset containing 
 │           n00002619_00000497.JPEG
 │           n00002619_00000506.JPEG
 
+```
+
+### Dlib
+
+Dlib C++ library can be downloaded from dlib.net. The project was tested with Dlib 19.21.
+
+After downloading extract the archive to the `dlib` folder in the project root (see the directory structure above). 
+
+### Models
+
+This project relies on the following models:
+
+* 5 and 68 facial landmark predictors (consult [this](https://github.com/davisking/dlib-models#shape_predictor_5_face_landmarksdatbz2) page for download links)
+* ResNet face recognition [model](https://github.com/davisking/dlib-models#dlib_face_recognition_resnet_model_v1datbz2)
+* OpenFace [model](https://storage.cmusatyalab.org/openface-models/nn4.v2.t7)
+
+Place all these models inside the `models` folder:
+```
+├───models
+│       dlib_face_recognition_resnet_model_v1.dat
+│       nn4.v2.t7
+│       shape_predictor_5_face_landmarks.dat
+│       shape_predictor_68_face_landmarks.dat
 ```
