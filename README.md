@@ -58,3 +58,40 @@ The project has the following directory structure:
         doppelganger.pdf   
         
 ```
+
+### Dataset
+
+The dataset directory is supposed to contain subfolders whose names correspond to labels. Image files inside each subfolder are considered to have a label of the folder. 
+
+The project was tested on a subset of the Celebrity Together Dataset containing 5 face images of around 1100 celebrities.
+
+```
+├───dataset
+│   │   readme.txt
+│   │   
+│   ├───n00000001
+│   │       n00000001_00000263.JPEG
+│   │       n00000001_00000405.JPEG
+│   │       n00000001_00000412.JPEG
+│   │       n00000001_00000583.JPEG
+│   │       n00000001_00000900.JPEG
+│   │       
+│   ├───n00000003
+│   │       n00000003_00000386.JPEG
+│   │       n00000003_00000488.JPEG
+│   │       n00000003_00000514.JPEG
+│   │       n00000003_00000670.JPEG
+│   │       n00000003_00000922.JPEG
+│          
+│   ...
+│   │       
+│   │       
+│   │       
+│   └───n00002619
+│           n00002619_00000265.JPEG
+│           n00002619_00000394.JPEG
+│           n00002619_00000414.JPEG
+│           n00002619_00000497.JPEG
+│           n00002619_00000506.JPEG
+
+```
