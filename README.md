@@ -161,3 +161,65 @@ When configuration is done, compile the code:
 ```
 cmake --build . --config Release
 ```
+
+
+## Usage
+
+The program has to be run from the command line. It takes in the path to the image file and several optional parameters: 
+
+```
+doppelganger 
+		--database=<dataset directory or cached database file>
+		[--cache=<cache file (output)>]
+		[--query=<image file>]
+		[--tolerance=<a positive float>]
+		[--algorithm=<ResNet or OpenFace>]
+		[--help]
+```
+
+Parameter    | Meaning 
+------------ | --------------------------------------
+help, ? | Prints the help message.
+input | The input image file.
+output | If not empty, specifies the output file where the output image will be saved to.
+lipstick_color | The new lipstick color in RRGGBBAA notation. If empty, the lipstick filter will not be applied.
+eye_color | The new iris color in RRGGBBAA notation. If empty, the eye color filter will not be applied.
+
+The RRGGBBAA color notation is similar to the one used in CSS, but you don't need to prepend it with the hash sign. The first 6 digits define the values 
+of R, G, B components. The last pair of digits, interpreted as a hexadecimal number, specifies the alpha channel of the color, where 00 represents a fully transparent color and FF represents a fully opaque color. In case the alpha component is omitted, it is assumed to be FF. For example, FF000070 specifies a pure semi-transparent red color. FF0000 and ff0000ff are identical and specify a fully opaque red color.
+
+Applying lipstick example:
+```
+./vimaku --input=./images/girl-no-makeup.jpg --lipstick_color=FF000050 
+```
+
+This will add a mild red lipstick effect:
+
+![Applying lipstick](./assets/lipstick.jpg)
+
+For realistic look I recommend alpha values from 30 to 70.
+
+
+Changing eye color example:
+```
+./vimaku --input=./images/girl7.png --eye_color=2E1902CC  
+```
+
+This will change the iris color to brown:
+![Brown eyes](./assets/eye_color_brown.jpg)
+
+Recommended values of alpha for the eye color filter depend on the original iris color and the intensity of the new color. When eyes are originally light, the alpha values should normally be less than 70.  
+
+Filters can be applied together:
+```
+./vimaku --input=./images/girl5_small.jpg --eye_color=4b724882 --lipstick_color=ff7f5050 --ouput=out.jpg  
+```
+
+This will change the iris color to blue and the lipstick color to orange. The output image will be saved to out.jpg. 
+
+![Blue eyes and orange lipstick](./assets/blue_eyes_and_orange_lipstick.jpg)
+
+
+## Credits
+
+Images have been downloaded from pinterest.com.
