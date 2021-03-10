@@ -128,7 +128,7 @@ Depending on the platform and the way OpenCV was installed, it may be needed to 
 
 ### Build the Project
 
-In the `src` folder create the `build` directory unless it already exists. In the simples case the project can be configured by running the following lines from the terminal:
+In the `src` folder create the `build` directory unless it already exists. In the simplest case the project can be configured by running the following lines from the terminal:
 
 ```
 cd build
@@ -180,46 +180,50 @@ doppelganger
 Parameter    | Meaning 
 ------------ | --------------------------------------
 help, ? | Prints the help message.
-input | The input image file.
-output | If not empty, specifies the output file where the output image will be saved to.
-lipstick_color | The new lipstick color in RRGGBBAA notation. If empty, the lipstick filter will not be applied.
-eye_color | The new iris color in RRGGBBAA notation. If empty, the eye color filter will not be applied.
+database | The path to a dataset directory or a cached file of previously computed face descriptors. If a directory is specified, the database will be created by processing files in that directory. In case the path specifies a file, the database will be loaded from that file. The type of descriptors stored in the file must match currently used algorithm. 
+cache | If not empty, specifies the output file path where face descriptors will be saved to.
+query | If not empty, specifies the path to an image of a person that needs to be recognized.
+tolerance | Defines the largest allowed difference between two faces considered the same (0.7 by default).
+algorithm | Specifies face recognition algorithm to use (ResNet or OpenFace). Defaults to ResNet.
 
-The RRGGBBAA color notation is similar to the one used in CSS, but you don't need to prepend it with the hash sign. The first 6 digits define the values 
-of R, G, B components. The last pair of digits, interpreted as a hexadecimal number, specifies the alpha channel of the color, where 00 represents a fully transparent color and FF represents a fully opaque color. In case the alpha component is omitted, it is assumed to be FF. For example, FF000070 specifies a pure semi-transparent red color. FF0000 and ff0000ff are identical and specify a fully opaque red color.
 
-Applying lipstick example:
+The following example shows how to recognize a person in the input file `./test/shashikant-pedwal.jpg` using the ResNet neural network and the dataset of face images:
+
 ```
-./vimaku --input=./images/girl-no-makeup.jpg --lipstick_color=FF000050 
-```
-
-This will add a mild red lipstick effect:
-
-![Applying lipstick](./assets/lipstick.jpg)
-
-For realistic look I recommend alpha values from 30 to 70.
-
-
-Changing eye color example:
-```
-./vimaku --input=./images/girl7.png --eye_color=2E1902CC  
+./doppelganger --database=./dataset --cache=resnet.db --query=./test/shashikant-pedwal.jpg --algorithm=resnet
 ```
 
-This will change the iris color to brown:
-![Brown eyes](./assets/eye_color_brown.jpg)
+It may take a couple of minutes to process all files in the dataset directory. Then it saves the descriptors into the `resnet.db` file, so we don't have to build the database again. The person in the test file will be recognized as Amitabh Bachchan.
 
-Recommended values of alpha for the eye color filter depend on the original iris color and the intensity of the new color. When eyes are originally light, the alpha values should normally be less than 70.  
-
-Filters can be applied together:
+If we want to identify another person, we can now load the database which works much faster:
 ```
-./vimaku --input=./images/girl5_small.jpg --eye_color=4b724882 --lipstick_color=ff7f5050 --ouput=out.jpg  
+./doppelganger --database=resnet.db --query=./test/sofia-solares.jpg --algorithm=resnet
 ```
 
-This will change the iris color to blue and the lipstick color to orange. The output image will be saved to out.jpg. 
+It is important to note that the algorithm used for building the database must match the currently used algorithm. 
 
-![Blue eyes and orange lipstick](./assets/blue_eyes_and_orange_lipstick.jpg)
+To use a different face recognition algorithm, we have to create the database again:
+```
+./doppelganger --database=./dataset --cache=openface.db --algorithm=openface
+```
 
+When it is ready, we can load it and perform face recognition the same way as we did with the ResNet model:
+```
+./doppelganger --database=openface.db --query=./test/sofia-solares.jpg --algorithm=openface
+```
 
-## Credits
+Please note that the default face recognition algorithm is ResNet, therefore the following will not work:
+```
+./doppelganger --database=openface.db --query=./test/sofia-solares.jpg 
+```
 
-Images have been downloaded from pinterest.com.
+It results in an error, because this database contains face descriptors computed by the OpenFace model which are different from ResNet descriptors:
+```
+The database file was saved for another descriptor type.
+```
+
+This will work fine:
+```
+./doppelganger --database=resnet.db --query=./test/sofia-solares.jpg
+```
+
