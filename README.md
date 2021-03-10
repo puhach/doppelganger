@@ -169,11 +169,11 @@ The program has to be run from the command line. It takes in a path to an image 
 
 ```
 doppelganger --database=<dataset directory or cached database file>			
-			[--cache=<cache file (output)>]
-			[--query=<image file>]
-			[--tolerance=<a positive float>]
-			[--algorithm=<ResNet or OpenFace>]
-			[--help]
+		[--cache=<cache file (output)>]
+		[--query=<image file>]
+		[--tolerance=<a positive float>]
+		[--algorithm=<ResNet or OpenFace>]
+		[--help]
 ```
 
 Parameter    | Meaning 
