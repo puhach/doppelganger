@@ -1,6 +1,6 @@
 # Doppelganger
 
-This face recognition application allows the identification of a person by their picture. It currently supports face recognition using the OpenFace model and a variation of the ResNet neural network. The architecture of the program is design to be scalable and anticipate the addition of new algorithms in future.
+This face recognition application allows the identification of a person by their picture. It currently supports face recognition using the OpenFace model and a variation of the ResNet neural network. The architecture of the program is designed to be scalable and anticipate the addition of new algorithms in future.
 
 The usage details are described below.
 
@@ -165,16 +165,15 @@ cmake --build . --config Release
 
 ## Usage
 
-The program has to be run from the command line. It takes in the path to the image file and several optional parameters: 
+The program has to be run from the command line. It takes in a path to an image file and several optional parameters: 
 
 ```
-doppelganger 
-		--database=<dataset directory or cached database file>
-		[--cache=<cache file (output)>]
-		[--query=<image file>]
-		[--tolerance=<a positive float>]
-		[--algorithm=<ResNet or OpenFace>]
-		[--help]
+doppelganger --database=<dataset directory or cached database file>			
+			[--cache=<cache file (output)>]
+			[--query=<image file>]
+			[--tolerance=<a positive float>]
+			[--algorithm=<ResNet or OpenFace>]
+			[--help]
 ```
 
 Parameter    | Meaning 
