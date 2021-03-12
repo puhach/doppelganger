@@ -1,6 +1,8 @@
 # Doppelganger
 
-This face recognition application allows the identification of a person by their picture. It currently supports face recognition using the OpenFace model and a variation of the ResNet neural network. The architecture of the program is designed to be scalable and anticipate the addition of new algorithms in future.
+This face recognition tool allows the identification of a person by their picture. It currently supports face recognition using the OpenFace model and a variation of the ResNet neural network. The architecture of the program is designed to be scalable and anticipate the addition of new algorithms in future.
+
+One amusing application of it is finding celebrities who look like an person in an input image.
 
 The usage details are described below.
 
@@ -192,16 +194,14 @@ The following example shows how to recognize a person in the input file `./test/
 ./doppelganger --database=./dataset --cache=resnet.db --query=./test/shashikant-pedwal.jpg --algorithm=resnet
 ```
 
-It may take a couple of minutes to process all files in the dataset directory. Then it saves the descriptors into the `resnet.db` file, so we don't have to build the database again. The person in the test file will be recognized as Amitabh Bachchan.
+It may take a couple of minutes to process all files in the dataset directory. Face descriptors will be saved to the `resnet.db` file, so we don't have to build the database again. The person in the test file will be recognized and their name will be displayed along with the calculated metric value (dissimilarity with the best matching face in the database).
 
 If we want to identify another person, we can now load the database which works much faster:
 ```
 ./doppelganger --database=resnet.db --query=./test/sofia-solares.jpg --algorithm=resnet
 ```
 
-It is important to note that the algorithm used for building the database must match the currently used algorithm. 
-
-To use a different face recognition algorithm, we have to create the database again:
+It is important to note that the algorithm used for building the database must match the currently used algorithm. To use a different face recognition algorithm, we have to create the database again:
 ```
 ./doppelganger --database=./dataset --cache=openface.db --algorithm=openface
 ```
