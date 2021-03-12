@@ -125,7 +125,7 @@ Open CMakeLists.txt and set the correct OpenCV directory in the following line:
 set(OpenCV_DIR /opt/opencv/4.5.1/installation/lib/cmake/opencv4)
 ```
 
-Depending on the platform and the way OpenCV was installed, it may be needed to provide the path to cmake files explicitly. On my KUbuntu 20.04 after building OpenCV 4.5.1 from sources the working `OpenCV_DIR` looks like <OpenCV installation path>/lib/cmake/opencv4. On Windows 8.1 after installing a binary distribution of OpenCV 4.2.0 it is C:\OpenCV\build.
+Depending on the platform and the way OpenCV was installed, it may be needed to provide the path to cmake files explicitly. On my KUbuntu 20.04 after building OpenCV 4.5.1 from sources the working `OpenCV_DIR` looks like `<OpenCV installation path>/lib/cmake/opencv4`. On Windows 8.1 after installing a binary distribution of OpenCV 4.2.0 it is `<OpenCV installation path>\build`.
 
 
 ### Build the Project
